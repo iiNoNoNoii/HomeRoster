@@ -63,12 +63,20 @@ const FORM_STYLES = css`
     flex-wrap: wrap;
     gap: 6px;
   }
+  /* Chip background always mixes in a bit of --divider-color rather than
+     relying on --secondary-background-color/--card-background-color alone,
+     which can end up matching the dialog surface (and thus be invisible) in
+     some themes - the same fixed-contrast formula is used for the filter
+     bar's equivalent .fp-person-chip/.fp-category-chip in styles.ts, and
+     for .reminder-chip below, so every pill/chip in this dialog follows the
+     same rule. */
   .person-chip {
     display: flex;
     align-items: center;
     gap: 6px;
-    border: 2px solid transparent;
-    background: var(--secondary-background-color, #eee);
+    border: 2px solid var(--divider-color, #767676);
+    background: color-mix(in srgb, var(--card-background-color, #fff) 70%, var(--divider-color, #767676) 30%);
+    color: var(--primary-text-color);
     border-radius: 16px;
     padding: 8px 12px;
     min-height: 40px;
@@ -81,11 +89,13 @@ const FORM_STYLES = css`
   }
   .person-chip.selected {
     border-color: var(--fp-color, var(--primary-color));
+    background: color-mix(in srgb, var(--fp-color, var(--primary-color)) 24%, var(--card-background-color, #fff));
     font-weight: 600;
   }
   .reminder-chip {
-    border: 1px solid var(--divider-color);
-    background: var(--card-background-color, #fff);
+    border: 2px solid var(--divider-color, #767676);
+    background: color-mix(in srgb, var(--card-background-color, #fff) 70%, var(--divider-color, #767676) 30%);
+    color: var(--primary-text-color);
     border-radius: 16px;
     padding: 6px 10px;
     min-height: 36px;
@@ -94,6 +104,10 @@ const FORM_STYLES = css`
     background: var(--primary-color);
     color: var(--text-primary-color, #fff);
     border-color: var(--primary-color);
+  }
+  .hint {
+    font-size: 0.72rem;
+    color: var(--secondary-text-color);
   }
   .error-text {
     color: var(--error-color, #db4437);
@@ -381,6 +395,12 @@ export class FamilyPlannerEventDialog extends LitElement {
   }
 
   private _renderForm(lang: string | undefined): TemplateResult {
+    // Native date/time input chrome (the calendar/clock icon) is drawn by
+    // the browser and otherwise renders dark-on-dark in a dark HA theme -
+    // color-scheme tells the browser which chrome variant to use so the
+    // icon stays visible regardless of theme, without a hacky filter:invert
+    // that would look wrong in light mode.
+    const colorScheme = this.hass?.themes?.darkMode ? "dark" : "light";
     return html`
       <div class="field">
         <label for="fp-title">${t(lang, "event.title")} *</label>
@@ -429,6 +449,7 @@ export class FamilyPlannerEventDialog extends LitElement {
           <input
             id="fp-start-date"
             type="date"
+            style="color-scheme:${colorScheme}"
             .value=${this._startDate}
             @input=${(e: Event) => {
               this._startDate = (e.target as HTMLInputElement).value;
@@ -444,6 +465,7 @@ export class FamilyPlannerEventDialog extends LitElement {
                 <input
                   id="fp-start-time"
                   type="time"
+                  style="color-scheme:${colorScheme}"
                   .value=${this._startTime}
                   @input=${(e: Event) => {
                     this._startTime = (e.target as HTMLInputElement).value;
@@ -461,6 +483,7 @@ export class FamilyPlannerEventDialog extends LitElement {
           <input
             id="fp-end-date"
             type="date"
+            style="color-scheme:${colorScheme}"
             .value=${this._endDate}
             @input=${(e: Event) => {
               this._endTouchedByUser = true;
@@ -476,6 +499,7 @@ export class FamilyPlannerEventDialog extends LitElement {
                 <input
                   id="fp-end-time"
                   type="time"
+                  style="color-scheme:${colorScheme}"
                   .value=${this._endTime}
                   @input=${(e: Event) => {
                     this._endTouchedByUser = true;
@@ -558,38 +582,24 @@ export class FamilyPlannerEventDialog extends LitElement {
 
       <div class="row">
         <div class="field">
-          <label for="fp-color">${t(lang, "event.color")}</label>
-          <input
-            id="fp-color"
-            type="text"
-            placeholder="#3f51b5"
-            .value=${this._color}
-            @input=${(e: Event) => {
-              this._color = (e.target as HTMLInputElement).value;
-              this._markDirty();
-            }}
-          />
+          <label>${t(lang, "event.color")}</label>
           ${renderColorSwatches(this.defaultColors, this._color, (c) => {
-            this._color = c;
+            // Tapping the already-selected swatch clears it, returning to
+            // "derive the color from the assigned person/category" (see
+            // resolveEventColor) - the only way to reach that state now
+            // that there's no free-text field to blank out.
+            this._color = this._color === c ? "" : c;
             this._markDirty();
           })}
+          <span class="hint">${t(lang, "event.palette_hint")}</span>
         </div>
         <div class="field">
-          <label for="fp-icon">${t(lang, "event.icon")}</label>
-          <input
-            id="fp-icon"
-            type="text"
-            placeholder="mdi:tooth"
-            .value=${this._icon}
-            @input=${(e: Event) => {
-              this._icon = (e.target as HTMLInputElement).value;
-              this._markDirty();
-            }}
-          />
+          <label>${t(lang, "event.icon")}</label>
           ${renderIconSwatches(this.defaultIcons, this._icon, (i) => {
-            this._icon = i;
+            this._icon = this._icon === i ? "" : i;
             this._markDirty();
           })}
+          <span class="hint">${t(lang, "event.palette_hint")}</span>
         </div>
       </div>
 

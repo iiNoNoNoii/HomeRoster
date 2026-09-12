@@ -13,7 +13,12 @@ export const SWATCH_STYLES = css`
     margin-top: 6px;
   }
   .fp-swatch {
-    border: 2px solid var(--divider-color, #ccc);
+    /* Color swatches override this background inline with the actual
+       color, so this only matters for icon swatches - mix in a bit of
+       --divider-color rather than relying on --card-background-color
+       alone, which can end up matching the dialog surface (and thus be
+       invisible) in some themes. */
+    border: 2px solid var(--divider-color, #767676);
     border-radius: 50%;
     width: 28px;
     height: 28px;
@@ -22,7 +27,7 @@ export const SWATCH_STYLES = css`
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--card-background-color, #fff);
+    background: color-mix(in srgb, var(--card-background-color, #fff) 70%, var(--divider-color, #767676) 30%);
     color: var(--primary-text-color);
   }
   .fp-swatch.selected {

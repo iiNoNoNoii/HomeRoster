@@ -155,18 +155,63 @@ export const CARD_STYLES = css`
     min-height: 40px;
   }
 
+  .fp-search-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .fp-search-row .fp-search {
+    flex: 1;
+    min-width: 160px;
+  }
+  .fp-filter-toggle {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border: 1px solid var(--divider-color, #e0e0e0);
+    background: var(--card-background-color, #fff);
+    color: var(--primary-text-color);
+    border-radius: 8px;
+    padding: 8px 12px;
+    min-height: 40px;
+    font-size: 0.85rem;
+  }
+  .fp-filter-toggle.active {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+  }
+  .fp-filter-badge {
+    background: var(--primary-color);
+    color: var(--text-primary-color, #fff);
+    border-radius: 999px;
+    font-size: 0.65rem;
+    line-height: 1;
+    min-width: 16px;
+    height: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+  }
+
   .fp-filterbar {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
   }
+  /* Chip background always mixes in a bit of --divider-color rather than
+     relying on --secondary-background-color/--card-background-color alone,
+     which can end up matching the surrounding surface (and thus be
+     invisible) in some themes - see the dark-theme contrast fixes in the
+     event dialog's FORM_STYLES for the same reasoning applied there. */
   .fp-person-chip,
   .fp-category-chip {
     display: flex;
     align-items: center;
     gap: 6px;
-    border: 1px solid var(--divider-color, #e0e0e0);
-    background: var(--card-background-color, #fff);
+    border: 2px solid var(--divider-color, #767676);
+    background: color-mix(in srgb, var(--card-background-color, #fff) 70%, var(--divider-color, #767676) 30%);
     color: var(--primary-text-color);
     border-radius: 16px;
     padding: 6px 12px;
@@ -176,7 +221,7 @@ export const CARD_STYLES = css`
   .fp-person-chip.active,
   .fp-category-chip.active {
     border-color: var(--fp-chip-color, var(--primary-color));
-    background: color-mix(in srgb, var(--fp-chip-color, var(--primary-color)) 18%, var(--card-background-color, #fff));
+    background: color-mix(in srgb, var(--fp-chip-color, var(--primary-color)) 24%, var(--card-background-color, #fff));
     font-weight: 600;
   }
   .fp-person-chip-dot {
@@ -187,6 +232,7 @@ export const CARD_STYLES = css`
   }
   .fp-person-chip-all.active {
     border-color: var(--primary-color);
+    background: color-mix(in srgb, var(--primary-color) 24%, var(--card-background-color, #fff));
     font-weight: 600;
   }
 
@@ -456,6 +502,61 @@ export const CARD_STYLES = css`
     font-size: 0.75rem;
     color: var(--disabled-text-color);
     padding: 0 0 4px 52px;
+  }
+
+  /* ---- week view (vertically stacked day sections) ---- */
+  .fp-view-week {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .fp-week-day-section {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .fp-week-day-header {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 8px;
+    text-align: left;
+    padding: 4px 4px;
+  }
+  .fp-week-day-header .fp-day-header-weekday {
+    font-weight: 600;
+  }
+  .fp-week-day-header .fp-day-header-date {
+    color: var(--secondary-text-color);
+  }
+  .fp-week-day-header.fp-today .fp-day-header-weekday,
+  .fp-week-day-header.fp-today .fp-day-header-date {
+    color: var(--primary-color);
+    font-weight: 700;
+  }
+  .fp-week-day-add {
+    margin-left: auto;
+    border: none;
+    background: transparent;
+    color: var(--secondary-text-color);
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .fp-week-day-add:hover {
+    background: var(--secondary-background-color, rgba(0, 0, 0, 0.06));
+  }
+  .fp-week-day-empty {
+    color: var(--disabled-text-color);
+    font-size: 0.82rem;
+    padding: 0 4px 6px;
+  }
+  .fp-week-day-items {
+    padding: 0 4px;
   }
 
   /* ---- agenda view ---- */

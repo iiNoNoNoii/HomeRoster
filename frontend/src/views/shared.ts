@@ -1,7 +1,8 @@
 // Small render helpers shared by all calendar views (day/week/month/agenda).
 import { html, nothing, type TemplateResult } from "lit";
 import { contrastTextColor, resolveEventColor } from "../utils/colors";
-import { formatTime } from "../utils/datetime";
+import { formatTime, isSameDay } from "../utils/datetime";
+import { groupEventsByDay, uniqueSortedDays } from "../utils/group-events";
 import { t } from "../utils/localize";
 import type { Category, FamilyEvent, Person } from "../types";
 import type { ViewContext } from "./context";
@@ -72,4 +73,72 @@ export function renderEventChip(ctx: ViewContext, event: FamilyEvent, options?: 
 
 export function statusLabel(status: string | null, language?: string): string {
   return status ? t(language, `status.${status}`) : "";
+}
+
+/** A single "day-grouped event list" row: colored bar, time, title,
+ * location, status and person dots. Shared by the agenda view, the week
+ * view's per-day sections, and the flat search/category results list so
+ * the three call sites render events identically instead of each keeping
+ * their own near-duplicate item template. */
+export function renderEventListItem(ctx: ViewContext, event: FamilyEvent): TemplateResult {
+  const color = resolveEventColor(event, ctx.people, ctx.categories, ctx.config.color_mode ?? "person");
+  const persons = personsForEvent(event, ctx.people);
+  return html`
+    <button
+      type="button"
+      class="fp-agenda-item ${event.status === "cancelled" ? "fp-cancelled" : ""}"
+      @click=${() => ctx.callbacks.onEventClick(event)}
+    >
+      <span class="fp-agenda-item-bar" style="background:${color}"></span>
+      <span class="fp-agenda-item-time"
+        >${event.all_day ? t(ctx.hass.language, "event.all_day") : eventTimeLabel(event, ctx.use24h)}</span
+      >
+      <span class="fp-agenda-item-title">${event.title}</span>
+      ${event.location
+        ? html`<span class="fp-agenda-item-location"><ha-icon icon="mdi:map-marker"></ha-icon>${event.location}</span>`
+        : nothing}
+      ${event.status ? html`<span class="fp-agenda-item-status">${statusLabel(event.status, ctx.hass.language)}</span>` : nothing}
+      ${renderPersonDots(persons, 4, ctx.hass.language)}
+    </button>
+  `;
+}
+
+/** A day-header label + list of `renderEventListItem` rows, in the visual
+ * style already used by the agenda view. Shared by the agenda view and the
+ * flat search/category results list (see `renderFilteredEventList` below) -
+ * the week view renders its own day headers since it needs a quick-create
+ * affordance and must show a header even for empty days. */
+function renderDayGroup(ctx: ViewContext, day: Date, events: FamilyEvent[]): TemplateResult {
+  return html`
+    <div class="fp-agenda-group">
+      <div class="fp-agenda-daylabel ${isSameDay(day, ctx.now) ? "fp-today" : ""}">
+        ${t(ctx.hass.language, `weekday.short.${day.getDay()}`)} ${day.getDate()}.${day.getMonth() + 1}.
+      </div>
+      <div class="fp-agenda-items">${events.map((event) => renderEventListItem(ctx, event))}</div>
+    </div>
+  `;
+}
+
+/** Renders `ctx.events` (already filtered/range-bounded by the card) as a
+ * flat, day-grouped chronological list - used in place of the normal
+ * day/week/month/agenda view whenever the user has entered search text or
+ * selected at least one category (see family-planner-card.ts). Unlike the
+ * agenda view, there is no fixed date range to group against: only days
+ * that actually contain a matching event are shown. */
+export function renderFilteredEventList(ctx: ViewContext): TemplateResult {
+  const days = uniqueSortedDays(ctx.events);
+  const groups = groupEventsByDay(ctx.events, days).filter((g) => g.events.length > 0);
+
+  if (groups.length === 0) {
+    return html`
+      <div class="fp-empty-state">
+        <ha-icon icon="mdi:calendar-search-outline"></ha-icon>
+        <div class="fp-empty-title">${t(ctx.hass.language, "empty.no_matches")}</div>
+      </div>
+    `;
+  }
+
+  return html`
+    <div class="fp-view fp-view-list">${groups.map((group) => renderDayGroup(ctx, group.day, group.events))}</div>
+  `;
 }

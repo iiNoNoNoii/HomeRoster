@@ -26,6 +26,7 @@ import { renderAgendaView } from "./views/agenda";
 import type { ViewCallbacks, ViewContext } from "./views/context";
 import { renderDayView } from "./views/day";
 import { renderMonthView } from "./views/month";
+import { renderFilteredEventList } from "./views/shared";
 import { renderWeekView } from "./views/week";
 import "./components/event-dialog";
 import "./components/event-detail-dialog";
@@ -56,6 +57,7 @@ export class FamilyPlannerCard extends LitElement {
   @state() private _search = "";
   @state() private _selectedPersonIds: string[] = [];
   @state() private _selectedCategoryIds: string[] = [];
+  @state() private _filtersExpanded = false;
   @state() private _canWriteEvents = true;
   @state() private _isAdmin = false;
   @state() private _requirePerson = true;
@@ -274,6 +276,14 @@ export class FamilyPlannerCard extends LitElement {
       categoryIds: this._selectedCategoryIds,
       search: this._search,
     });
+  }
+
+  // Searching (or selecting at least one category) replaces the normal
+  // day/week/month/agenda view with a flat chronological list of matches -
+  // see _renderFlatList(). Person-only filtering keeps filtering within
+  // whatever view is currently active, as before.
+  private get _showFlatList(): boolean {
+    return this._search.trim().length > 0 || this._selectedCategoryIds.length > 0;
   }
 
   private get _visiblePeople(): Person[] {
@@ -512,8 +522,30 @@ export class FamilyPlannerCard extends LitElement {
     }
   }
 
-  private _renderFilterBar(): TemplateResult | typeof nothing {
+  private _renderFilterToggle(): TemplateResult | typeof nothing {
     if (!this._config.show_filters) {
+      return nothing;
+    }
+    const lang = this._hass?.language;
+    const activeCount = this._selectedPersonIds.length + this._selectedCategoryIds.length;
+    return html`
+      <button
+        type="button"
+        class="fp-filter-toggle ${this._filtersExpanded ? "active" : ""}"
+        title=${t(lang, "action.filter")}
+        aria-expanded=${this._filtersExpanded ? "true" : "false"}
+        @click=${() => (this._filtersExpanded = !this._filtersExpanded)}
+      >
+        <ha-icon icon="mdi:filter-variant"></ha-icon>
+        <span>${t(lang, "action.filter")}</span>
+        ${activeCount > 0 ? html`<span class="fp-filter-badge">${activeCount}</span>` : nothing}
+        <ha-icon icon=${this._filtersExpanded ? "mdi:chevron-up" : "mdi:chevron-down"}></ha-icon>
+      </button>
+    `;
+  }
+
+  private _renderFilterBar(): TemplateResult | typeof nothing {
+    if (!this._config.show_filters || !this._filtersExpanded) {
       return nothing;
     }
     const lang = this._hass?.language;
@@ -552,6 +584,10 @@ export class FamilyPlannerCard extends LitElement {
         )}
       </div>
     `;
+  }
+
+  private _renderFlatList(): TemplateResult {
+    return renderFilteredEventList(this._buildViewContext());
   }
 
   protected render(): TemplateResult {
@@ -637,20 +673,31 @@ export class FamilyPlannerCard extends LitElement {
               : nothing}
             <div class="fp-range-label">${this._rangeLabel()}</div>
           </div>
-          ${this._config.show_search
+          ${this._config.show_search || this._config.show_filters
             ? html`
-                <input
-                  class="fp-search"
-                  type="search"
-                  placeholder=${t(lang, "filter.search_placeholder")}
-                  @input=${(e: Event) => this._onSearchInput(e)}
-                />
+                <div class="fp-search-row">
+                  ${this._config.show_search
+                    ? html`
+                        <input
+                          class="fp-search"
+                          type="search"
+                          placeholder=${t(lang, "filter.search_placeholder")}
+                          @input=${(e: Event) => this._onSearchInput(e)}
+                        />
+                      `
+                    : nothing}
+                  ${this._renderFilterToggle()}
+                </div>
               `
             : nothing}
           ${this._renderFilterBar()}
         </div>
         <div class="fp-body ${this._config.compact ? "fp-compact" : ""}">
-          ${this._loading ? html`<div class="fp-loading">…</div>` : this._renderView()}
+          ${this._loading
+            ? html`<div class="fp-loading">…</div>`
+            : this._showFlatList
+              ? this._renderFlatList()
+              : this._renderView()}
         </div>
       </ha-card>
 
