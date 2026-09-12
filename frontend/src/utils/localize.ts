@@ -230,6 +230,16 @@ const en: Dict = {
 
 const STRINGS: Record<string, Dict> = { de, en };
 
+/** Resolves the language to use for `t()` lookups given the card's own
+ * `options.language` integration setting ("auto" | "de" | "en") and the
+ * viewer's Home Assistant UI language. "auto" (the default) defers to the
+ * viewer's own `hass.language` exactly as before this option existed; any
+ * other configured value is an explicit admin override (e.g. for a shared
+ * wall-tablet dashboard) that applies regardless of who is viewing. */
+export function resolveLanguage(configuredLanguage: string, hassLanguage: string): string {
+  return configuredLanguage === "auto" ? hassLanguage : configuredLanguage;
+}
+
 export function t(language: string | undefined, key: string, vars?: Record<string, string | number>): string {
   const lang = (language || "de").split("-")[0];
   const dict = STRINGS[lang] || STRINGS.de;

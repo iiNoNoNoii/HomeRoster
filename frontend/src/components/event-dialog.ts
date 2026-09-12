@@ -8,7 +8,7 @@ import type { HomeAssistant } from "../ha-types";
 import type { Category, EventStatus, FamilyEvent, FamilyPlannerCardConfig, Person } from "../types";
 import { DEFAULT_COLORS, DEFAULT_ICONS, DEFAULT_REMINDER_MINUTES, REMINDER_PRESETS } from "../const";
 import { combineLocalDateTime, computeEndFromStart, dateOnly, shiftDateString, toTimeInput } from "../utils/datetime";
-import { t } from "../utils/localize";
+import { resolveLanguage, t } from "../utils/localize";
 import { validateEventForm, type ValidationResult } from "../utils/validation";
 import { renderColorSwatches, renderIconSwatches, SWATCH_STYLES } from "../utils/swatches";
 
@@ -154,6 +154,11 @@ export class FamilyPlannerEventDialog extends LitElement {
   static styles = [FORM_STYLES, SWATCH_STYLES];
 
   @property({ attribute: false }) hass!: HomeAssistant;
+  // The integration's `options.language` setting ("auto" | "de" | "en") -
+  // "auto" defers to this.hass.language as before, anything else is an
+  // explicit admin override applied regardless of the viewer's own HA
+  // language (see utils/localize.ts's resolveLanguage()).
+  @property({ type: String }) language = "auto";
   @property({ attribute: false }) config!: FamilyPlannerCardConfig;
   @property({ attribute: false }) people: Person[] = [];
   @property({ attribute: false }) categories: Category[] = [];
@@ -366,7 +371,7 @@ export class FamilyPlannerEventDialog extends LitElement {
   }
 
   protected render(): TemplateResult {
-    const lang = this.hass?.language;
+    const lang = resolveLanguage(this.language, this.hass?.language ?? "auto");
     const heading = this.event ? t(lang, "event.edit_title") : t(lang, "event.new_title");
     return html`
       <family-planner-dialog-shell .heading=${heading} wide @fp-shell-close=${() => this._requestClose()}>

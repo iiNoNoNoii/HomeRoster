@@ -1,0 +1,32 @@
+name: Backend tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  pytest:
+    name: pytest (tests/backend)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest-homeassistant-custom-component python-dateutil tzdata
+
+      - name: Run backend test suite
+        run: pytest tests/backend -q
+
+      - name: Lint (ruff)
+        run: |
+          pip install ruff
+          ruff check custom_components/family_planner tests/backend
+          ruff format --check custom_components/family_planner tests/backend

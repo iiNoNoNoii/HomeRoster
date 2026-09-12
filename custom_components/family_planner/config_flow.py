@@ -17,6 +17,7 @@ from .const import (
     ACTION_EDIT,
     ACTION_MOVE_DOWN,
     ACTION_MOVE_UP,
+    CARD_LANGUAGES,
     CONF_ALLOW_NON_ADMIN_WRITE,
     CONF_DEFAULT_COLORS,
     CONF_DEFAULT_ICONS,
@@ -24,8 +25,10 @@ from .const import (
     CONF_ENABLE_CATEGORIES,
     CONF_ENABLE_STATUS,
     CONF_FIRST_WEEKDAY,
+    CONF_LANGUAGE,
     CONF_REMINDER_TICK_SECONDS,
     CONF_REQUIRE_PERSON,
+    CONF_SEND_MOBILE_NOTIFICATIONS,
     CONF_TODAY_SENSOR_LIMIT,
     DEFAULT_ALLOW_NON_ADMIN_WRITE,
     DEFAULT_COLORS,
@@ -33,9 +36,11 @@ from .const import (
     DEFAULT_ENABLE_STATUS,
     DEFAULT_FIRST_WEEKDAY,
     DEFAULT_ICONS,
+    DEFAULT_LANGUAGE,
     DEFAULT_REMINDER_MINUTES,
     DEFAULT_REMINDER_TICK_SECONDS,
     DEFAULT_REQUIRE_PERSON,
+    DEFAULT_SEND_MOBILE_NOTIFICATIONS,
     DEFAULT_TODAY_SENSOR_LIMIT,
     DOMAIN,
     PERSON_ROLES,
@@ -97,7 +102,35 @@ _FIRST_WEEKDAY_SELECTOR = selector.SelectSelector(
     )
 )
 
+_LANGUAGE_SELECTOR = selector.SelectSelector(
+    selector.SelectSelectorConfig(
+        options=CARD_LANGUAGES,
+        translation_key="language",
+        mode=selector.SelectSelectorMode.DROPDOWN,
+    )
+)
+
+_NOTIFY_SERVICE_SELECTOR = selector.EntitySelector(selector.EntitySelectorConfig(domain="notify"))
+
 _DEFAULT_PERSON_COLOR = "#3f51b5"
+
+
+def _notify_service_to_entity_id(notify_service: str | None) -> str | None:
+    """Turn a stored `notify_service` (e.g. "mobile_app_pixel_7") into the
+    full entity id ("notify.mobile_app_pixel_7") the EntitySelector expects
+    as a default value when prefilling the form for editing."""
+    if not notify_service:
+        return None
+    return f"notify.{notify_service}"
+
+
+def _entity_id_to_notify_service(entity_id: str | None) -> str | None:
+    """Strip the "notify." domain prefix the EntitySelector returns, so the
+    stored value matches what's passed to hass.services.async_call("notify",
+    <this value>, ...)."""
+    if not entity_id:
+        return None
+    return entity_id.removeprefix("notify.")
 
 
 def _hex_to_rgb(hex_color: str | None) -> list[int]:
@@ -218,6 +251,16 @@ class FamilyPlannerOptionsFlow(config_entries.OptionsFlow):
                     CONF_DEFAULT_ICONS,
                     default=options.get(CONF_DEFAULT_ICONS, DEFAULT_ICONS),
                 ): str,
+                vol.Required(
+                    CONF_LANGUAGE,
+                    default=options.get(CONF_LANGUAGE, DEFAULT_LANGUAGE),
+                ): _LANGUAGE_SELECTOR,
+                vol.Required(
+                    CONF_SEND_MOBILE_NOTIFICATIONS,
+                    default=options.get(
+                        CONF_SEND_MOBILE_NOTIFICATIONS, DEFAULT_SEND_MOBILE_NOTIFICATIONS
+                    ),
+                ): bool,
             }
         )
         if user_input is not None:
@@ -246,15 +289,25 @@ class FamilyPlannerOptionsFlow(config_entries.OptionsFlow):
         # already names the person being edited - show that person's real
         # current color rather than resetting the swatch to the app default.
         color_default_hex = _DEFAULT_PERSON_COLOR
+        # Same idea as the color prefill above, but for the notify-service
+        # EntitySelector: it has a genuine "blank" state (no default at all),
+        # so we only supply a default when the selected person actually has
+        # a notify_service, converting it back to the full entity id the
+        # selector expects (see _notify_service_to_entity_id).
+        notify_service_default: str | None = None
         if user_input is not None and user_input.get("person_id"):
             selected_person = coordinator.get_person(user_input["person_id"])
             if selected_person is not None:
                 color_default_hex = selected_person.color
+                notify_service_default = _notify_service_to_entity_id(
+                    selected_person.notify_service
+                )
 
         if user_input is not None:
             action = user_input["action"]
             person_id = user_input.get("person_id")
             color_rgb = user_input.get("color")
+            notify_service = _entity_id_to_notify_service(user_input.get("notify_service"))
             try:
                 if action == ACTION_ADD:
                     if not user_input.get("name"):
@@ -264,6 +317,7 @@ class FamilyPlannerOptionsFlow(config_entries.OptionsFlow):
                             "name": user_input["name"],
                             "color": _rgb_to_hex(color_rgb) if color_rgb else "#3f51b5",
                             "role": user_input.get("role"),
+                            "notify_service": notify_service,
                         }
                     )
                     return await self.async_step_people()
@@ -277,6 +331,8 @@ class FamilyPlannerOptionsFlow(config_entries.OptionsFlow):
                         changes["color"] = _rgb_to_hex(color_rgb)
                     if user_input.get("role"):
                         changes["role"] = user_input["role"]
+                    if notify_service:
+                        changes["notify_service"] = notify_service
                     await coordinator.async_update_person(person_id, changes)
                     return await self.async_step_people()
                 if action == ACTION_DELETE:
@@ -312,6 +368,11 @@ class FamilyPlannerOptionsFlow(config_entries.OptionsFlow):
                     "color", default=_hex_to_rgb(color_default_hex)
                 ): selector.ColorRGBSelector(),
                 vol.Optional("role"): _ROLE_SELECTOR,
+                (
+                    vol.Optional("notify_service", default=notify_service_default)
+                    if notify_service_default
+                    else vol.Optional("notify_service")
+                ): _NOTIFY_SERVICE_SELECTOR,
             }
         )
         return self.async_show_form(

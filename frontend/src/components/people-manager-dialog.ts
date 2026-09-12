@@ -9,7 +9,7 @@ import * as api from "../api";
 import type { HomeAssistant } from "../ha-types";
 import type { Person } from "../types";
 import { DEFAULT_COLORS } from "../const";
-import { t } from "../utils/localize";
+import { resolveLanguage, t } from "../utils/localize";
 import { renderColorSwatches, SWATCH_STYLES } from "../utils/swatches";
 
 const STYLES = css`
@@ -100,6 +100,9 @@ export class FamilyPlannerPeopleManagerDialog extends LitElement {
   static styles = [STYLES, SWATCH_STYLES];
 
   @property({ attribute: false }) hass!: HomeAssistant;
+  // See event-dialog.ts's `language` property for the "auto" vs explicit
+  // override contract.
+  @property({ type: String }) language = "auto";
   @property({ attribute: false }) people: Person[] = [];
   @property({ attribute: false }) defaultColors: string[] = DEFAULT_COLORS;
 
@@ -176,7 +179,7 @@ export class FamilyPlannerPeopleManagerDialog extends LitElement {
   }
 
   protected render(): TemplateResult {
-    const lang = this.hass?.language;
+    const lang = resolveLanguage(this.language, this.hass?.language ?? "auto");
     const sorted = [...this.people].sort((a, b) => a.sort_order - b.sort_order);
     return html`
       <family-planner-dialog-shell .heading=${t(lang, "people.title")} @fp-shell-close=${() => this._close()}>

@@ -44,7 +44,7 @@ export function renderTimeGrid(ctx: ViewContext, days: Date[]): TemplateResult {
         ${days.map(
           (day) => html`
             <div class="fp-day-header ${isSameDay(day, now) ? "fp-today" : ""}">
-              <div class="fp-day-header-weekday">${t(ctx.hass.language, `weekday.short.${day.getDay()}`)}</div>
+              <div class="fp-day-header-weekday">${t(ctx.language, `weekday.short.${day.getDay()}`)}</div>
               <div class="fp-day-header-date">${day.getDate()}.${day.getMonth() + 1}.</div>
             </div>
           `
@@ -53,7 +53,7 @@ export function renderTimeGrid(ctx: ViewContext, days: Date[]): TemplateResult {
       ${hasAllDay
         ? html`
             <div class="fp-allday-row">
-              <div class="fp-time-gutter fp-time-gutter-label">${t(ctx.hass.language, "event.all_day")}</div>
+              <div class="fp-time-gutter fp-time-gutter-label">${t(ctx.language, "event.all_day")}</div>
               ${days.map((day) => {
                 const dayEvents = allDayEvents.filter((e) => isSameDay(day, new Date(e.occurrence_start)));
                 return html`

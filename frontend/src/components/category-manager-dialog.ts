@@ -8,7 +8,7 @@ import * as api from "../api";
 import type { HomeAssistant } from "../ha-types";
 import type { Category } from "../types";
 import { DEFAULT_COLORS, DEFAULT_ICONS } from "../const";
-import { t } from "../utils/localize";
+import { resolveLanguage, t } from "../utils/localize";
 import { renderColorSwatches, renderIconSwatches, SWATCH_STYLES } from "../utils/swatches";
 
 const STYLES = css`
@@ -98,6 +98,9 @@ export class FamilyPlannerCategoryManagerDialog extends LitElement {
   static styles = [STYLES, SWATCH_STYLES];
 
   @property({ attribute: false }) hass!: HomeAssistant;
+  // See event-dialog.ts's `language` property for the "auto" vs explicit
+  // override contract.
+  @property({ type: String }) language = "auto";
   @property({ attribute: false }) categories: Category[] = [];
   @property({ attribute: false }) defaultColors: string[] = DEFAULT_COLORS;
   @property({ attribute: false }) defaultIcons: string[] = DEFAULT_ICONS;
@@ -165,7 +168,7 @@ export class FamilyPlannerCategoryManagerDialog extends LitElement {
   }
 
   protected render(): TemplateResult {
-    const lang = this.hass?.language;
+    const lang = resolveLanguage(this.language, this.hass?.language ?? "auto");
     const sorted = [...this.categories].sort((a, b) => a.sort_order - b.sort_order);
     return html`
       <family-planner-dialog-shell .heading=${t(lang, "category.title")} @fp-shell-close=${() => this._close()}>

@@ -1,12 +1,12 @@
-# Beispiel-Dashboard-Konfigurationen für Family Planner.
-# Zum Kopieren in eine Lovelace-Ansicht (UI-Editor -> Karte hinzufügen ->
-# "Manuell" bzw. YAML-Modus einer Ansicht).
+# Example dashboard configurations for Family Planner.
+# Copy into a Lovelace view (UI editor -> Add card -> "Manual", or a
+# view's YAML mode).
 
 # -----------------------------------------------------------------------
-# Haupt-Familienkalender (siehe README für alle Optionen)
+# Main family calendar (see the README for all options)
 # -----------------------------------------------------------------------
 - type: custom:family-planner-card
-  title: Familienkalender
+  title: Family calendar
   entity: calendar.family_planner
   default_view: week
   show_filters: true
@@ -21,14 +21,14 @@
   show_now_line: true
 
 # -----------------------------------------------------------------------
-# 1) "Heute"-Kachel: Anzahl + nächste Termine, Klick öffnet den Kalender.
-#    Nutzt sensor.family_planner_events_today (State + "events"-Attribut).
+# 1) "Today" tile: count + next events, tap opens the calendar.
+#    Uses sensor.family_planner_events_today (state + "events" attribute).
 # -----------------------------------------------------------------------
 - type: markdown
-  title: Heute
+  title: Today
   content: >-
     {% set today = states.sensor.family_planner_events_today %}
-    **{{ today.state }} Termin(e) heute**
+    **{{ today.state }} event(s) today**
 
 
     {% for event in (today.attributes.events or [])[:5] %}
@@ -36,62 +36,62 @@
     {% endfor %}
   tap_action:
     action: navigate
-    navigation_path: /lovelace/familienkalender
+    navigation_path: /lovelace/family-calendar
 
 # -----------------------------------------------------------------------
-# 2) "Nächster Termin"-Kachel: Titel, relative Zeit, Personen, Kategorie-Icon.
-#    Nutzt die native Tile-Karte mit sensor.family_planner_next_event
-#    (Device Class "timestamp" liefert automatisch die relative Zeitanzeige).
+# 2) "Next event" tile: title, relative time, people, category icon.
+#    Uses the native tile card with sensor.family_planner_next_event
+#    (the "timestamp" device class automatically shows a relative time).
 # -----------------------------------------------------------------------
 - type: tile
   entity: sensor.family_planner_next_event
-  name: Nächster Termin
+  name: Next event
   icon: mdi:calendar-clock
   state_content:
     - state
     - last-changed
-  # Titel/Ort/Personen des nächsten Termins als sekundäre Zeile:
-  # (Tile-Karten zeigen bei Timestamp-Sensoren standardmäßig eine relative
-  # Zeit an; für Titel/Ort nutze zusätzlich eine Markdown-Karte wie unten.)
+  # Title/location/people of the next event as a secondary line:
+  # (tile cards show a relative time by default for timestamp sensors; for
+  # title/location, also use a markdown card like the one below.)
 
 - type: markdown
   content: >-
     {% set next = states.sensor.family_planner_next_event %}
     {% if next.state in ['unknown', 'unavailable'] %}
-    Kein weiterer Termin geplant.
+    No further events planned.
     {% else %}
     **{{ next.attributes.title }}**
 
-    {{ as_timestamp(next.state) | timestamp_custom('%H:%M', true) }} Uhr
+    {{ as_timestamp(next.state) | timestamp_custom('%H:%M', true) }}
     {% if next.attributes.location %} · {{ next.attributes.location }}{% endif %}
     {% endif %}
 
 # -----------------------------------------------------------------------
-# 3) Personenkachel: Name/Farbe, nächster Termin, Anzahl heutiger Termine.
-#    Klick filtert/öffnet den Kalender für diese Person. Ersetze "anna"
-#    durch die tatsächliche Personen-ID.
+# 3) Person tile: name/color, next event, count of today's events.
+#    Tap filters/opens the calendar for this person. Replace "anna" with
+#    the real person ID.
 # -----------------------------------------------------------------------
 - type: markdown
   title: Anna
   content: >-
     {% set today = states('sensor.family_planner_events_today_anna') %}
     {% set next = states.sensor.family_planner_next_event_anna %}
-    **{{ today }} Termin(e) heute**
+    **{{ today }} event(s) today**
 
     {% if next.state not in ['unknown', 'unavailable'] %}
-    Nächster Termin: {{ next.attributes.title }} um
-    {{ as_timestamp(next.state) | timestamp_custom('%H:%M', true) }} Uhr
+    Next event: {{ next.attributes.title }} at
+    {{ as_timestamp(next.state) | timestamp_custom('%H:%M', true) }}
     {% else %}
-    Kein weiterer Termin geplant.
+    No further events planned.
     {% endif %}
   tap_action:
     action: navigate
-    navigation_path: /lovelace/familienkalender
+    navigation_path: /lovelace/family-calendar
 
 # -----------------------------------------------------------------------
-# Beispiel: aktiver Termin als Kachel (binary_sensor.family_planner_event_active)
+# Example: active event as a tile (binary_sensor.family_planner_event_active)
 # -----------------------------------------------------------------------
 - type: tile
   entity: binary_sensor.family_planner_event_active
-  name: Termin läuft gerade
+  name: Event in progress
   icon: mdi:calendar-check

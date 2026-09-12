@@ -32,7 +32,9 @@
           "reminder_tick_seconds": "Prüfintervall für Erinnerungen (Sekunden)",
           "default_reminder_minutes": "Standard-Erinnerung (Minuten vor Termin)",
           "default_colors": "Standardfarben (kommagetrennt, Hex)",
-          "default_icons": "Standard-Icons (kommagetrennt, MDI)"
+          "default_icons": "Standard-Icons (kommagetrennt, MDI)",
+          "language": "Kartensprache",
+          "send_mobile_notifications": "Erinnerungen per Home Assistant App an Personen mit hinterlegtem Benachrichtigungsziel senden"
         }
       },
       "people": {
@@ -43,7 +45,8 @@
           "person_id": "Person",
           "name": "Name (bei Hinzufügen/Bearbeiten)",
           "color": "Farbe (bei Hinzufügen/Bearbeiten)",
-          "role": "Rolle (bei Hinzufügen/Bearbeiten)"
+          "role": "Rolle (bei Hinzufügen/Bearbeiten)",
+          "notify_service": "Benachrichtigungsziel (Handy)"
         }
       },
       "people_delete_confirm": {
@@ -114,6 +117,13 @@
       "options": {
         "monday": "Montag",
         "sunday": "Sonntag"
+      }
+    },
+    "language": {
+      "options": {
+        "auto": "Automatisch (Systemsprache)",
+        "de": "Deutsch",
+        "en": "Englisch"
       }
     }
   }

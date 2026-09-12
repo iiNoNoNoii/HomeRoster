@@ -9,6 +9,9 @@ PLATFORMS: Final = ["calendar", "sensor", "binary_sensor"]
 
 # Storage
 STORAGE_VERSION_MAJOR: Final = 1
+# Person gained an optional `notify_service` field (see models.py); old
+# stored people without it load fine via Person.from_dict()'s .get()
+# default, so this did not require a minor-version bump.
 STORAGE_VERSION_MINOR: Final = 1
 STORAGE_KEY_PREFIX: Final = "family_planner"
 
@@ -23,6 +26,8 @@ CONF_REMINDER_TICK_SECONDS: Final = "reminder_tick_seconds"
 CONF_DEFAULT_REMINDER_MINUTES: Final = "default_reminder_minutes"
 CONF_DEFAULT_COLORS: Final = "default_colors"
 CONF_DEFAULT_ICONS: Final = "default_icons"
+CONF_LANGUAGE: Final = "language"
+CONF_SEND_MOBILE_NOTIFICATIONS: Final = "send_mobile_notifications"
 
 DEFAULT_REQUIRE_PERSON: Final = True
 DEFAULT_ENABLE_STATUS: Final = True
@@ -32,6 +37,8 @@ DEFAULT_FIRST_WEEKDAY: Final = "monday"
 DEFAULT_TODAY_SENSOR_LIMIT: Final = 20
 DEFAULT_REMINDER_TICK_SECONDS: Final = 30
 DEFAULT_REMINDER_MINUTES: Final = 60
+DEFAULT_LANGUAGE: Final = "auto"
+DEFAULT_SEND_MOBILE_NOTIFICATIONS: Final = True
 FIRED_REMINDER_RETENTION_HOURS: Final = 48
 
 # Options flow actions
@@ -49,6 +56,8 @@ STRATEGY_REASSIGN: Final = "reassign"
 STRATEGY_KEEP_UNASSIGNED: Final = "keep_unassigned"
 
 PERSON_ROLES: Final = ["parent", "child", "other"]
+
+CARD_LANGUAGES: Final = ["auto", "de", "en"]
 
 EVENT_STATUSES: Final = ["planned", "confirmed", "tentative", "done", "cancelled"]
 

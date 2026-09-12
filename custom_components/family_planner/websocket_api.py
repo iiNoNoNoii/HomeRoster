@@ -381,6 +381,7 @@ async def ws_people_list(
         vol.Optional("linked_person_entity_id"): vol.Any(str, None),
         vol.Optional("active", default=True): bool,
         vol.Optional("role"): vol.Any(str, None),
+        vol.Optional("notify_service"): vol.Any(str, None),
     }
 )
 @websocket_api.async_response
@@ -409,6 +410,7 @@ async def ws_people_create(
         vol.Optional("linked_person_entity_id"): vol.Any(str, None),
         vol.Optional("active"): bool,
         vol.Optional("role"): vol.Any(str, None),
+        vol.Optional("notify_service"): vol.Any(str, None),
     }
 )
 @websocket_api.async_response

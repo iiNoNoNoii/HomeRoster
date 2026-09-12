@@ -22,8 +22,10 @@ from homeassistant.util import dt as dt_util
 from .const import (
     CONF_REMINDER_TICK_SECONDS,
     CONF_REQUIRE_PERSON,
+    CONF_SEND_MOBILE_NOTIFICATIONS,
     DEFAULT_REMINDER_TICK_SECONDS,
     DEFAULT_REQUIRE_PERSON,
+    DEFAULT_SEND_MOBILE_NOTIFICATIONS,
     EVENT_CREATED,
     EVENT_DELETED,
     EVENT_ENDED,
@@ -196,6 +198,7 @@ class FamilyPlannerCoordinator:
             active=data.get("active", True),
             sort_order=data.get("sort_order", len(self._people)),
             role=data.get("role"),
+            notify_service=data.get("notify_service"),
         )
         person.validate()
         self._people[person.id] = person
@@ -221,6 +224,7 @@ class FamilyPlannerCoordinator:
                     "active",
                     "sort_order",
                     "role",
+                    "notify_service",
                 }
             }
         )
@@ -686,7 +690,7 @@ class FamilyPlannerCoordinator:
 
     async def _async_tick(self, _now: dt.datetime) -> None:
         now = dt_util.utcnow()
-        self._check_reminders(now)
+        await self._check_reminders(now)
         self._check_start_end(now)
         self._check_date_rollover()
         self._prune_fired_reminders(now)
@@ -701,10 +705,15 @@ class FamilyPlannerCoordinator:
             self._last_local_date = today
             self.async_update_listeners()
 
-    def _check_reminders(self, now: dt.datetime) -> None:
+    async def _check_reminders(self, now: dt.datetime) -> None:
         window_end = now + dt.timedelta(hours=REMINDER_LOOKAHEAD_HOURS)
         occurrences = self._all_occurrences(
             now - dt.timedelta(hours=1), window_end, include_cancelled=False
+        )
+        send_notifications = bool(
+            self.entry.options.get(
+                CONF_SEND_MOBILE_NOTIFICATIONS, DEFAULT_SEND_MOBILE_NOTIFICATIONS
+            )
         )
         changed = False
         for occ in occurrences:
@@ -726,6 +735,8 @@ class FamilyPlannerCoordinator:
                             "occurrence_start": occ.start.isoformat(),
                         },
                     )
+                    if send_notifications:
+                        await self._async_send_reminder_notifications(occ, offset)
                 else:
                     _LOGGER.debug(
                         "Family Planner: Erinnerung für Termin %s (Offset %s Min.) nach "
@@ -735,6 +746,38 @@ class FamilyPlannerCoordinator:
                     )
         if changed:
             self._async_save()
+
+    async def _async_send_reminder_notifications(self, occ: EventOccurrence, offset: int) -> None:
+        """Push a due reminder to each assigned person with a notify_service set.
+
+        Best-effort and isolated per person: a missing/removed notify service
+        (e.g. the Companion App was uninstalled) must not stop other people
+        or other events from being notified, and must not break reminder
+        processing (the bus event above has already fired regardless).
+        """
+        if offset == 0:
+            when = "jetzt"
+        else:
+            when = f"um {dt_util.as_local(occ.start).strftime('%H:%M')} Uhr"
+        message = f"Erinnerung: {occ.event.title} {when}"
+        for person_id in occ.event.person_ids:
+            person = self._people.get(person_id)
+            if person is None or not person.notify_service:
+                continue
+            try:
+                await self.hass.services.async_call(
+                    "notify",
+                    person.notify_service,
+                    {"title": occ.event.title, "message": message},
+                    blocking=False,
+                )
+            except Exception as err:  # noqa: BLE001 - one bad target must not break the rest
+                _LOGGER.warning(
+                    "Family Planner: Push-Benachrichtigung an %s (notify.%s) fehlgeschlagen: %s",
+                    person.name,
+                    person.notify_service,
+                    err,
+                )
 
     def _check_start_end(self, now: dt.datetime) -> None:
         occurrences = self._all_occurrences(

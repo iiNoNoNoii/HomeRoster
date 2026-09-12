@@ -82,6 +82,7 @@ class Person:
     active: bool = True
     sort_order: int = 0
     role: str | None = None
+    notify_service: str | None = None
 
     def validate(self) -> None:
         if not self.name or not self.name.strip():
@@ -101,6 +102,7 @@ class Person:
             "active": self.active,
             "sort_order": self.sort_order,
             "role": self.role,
+            "notify_service": self.notify_service,
         }
 
     @classmethod
@@ -114,6 +116,7 @@ class Person:
             active=data.get("active", True),
             sort_order=data.get("sort_order", 0),
             role=data.get("role"),
+            notify_service=data.get("notify_service"),
         )
 
     def slug(self) -> str:

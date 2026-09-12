@@ -32,7 +32,9 @@
           "reminder_tick_seconds": "Reminder check interval (seconds)",
           "default_reminder_minutes": "Default reminder (minutes before event)",
           "default_colors": "Default colors (comma-separated, hex)",
-          "default_icons": "Default icons (comma-separated, MDI)"
+          "default_icons": "Default icons (comma-separated, MDI)",
+          "language": "Card language",
+          "send_mobile_notifications": "Send reminders via the Home Assistant app to people with a configured notification target"
         }
       },
       "people": {
@@ -43,7 +45,8 @@
           "person_id": "Person",
           "name": "Name (for add/edit)",
           "color": "Color (for add/edit)",
-          "role": "Role (for add/edit)"
+          "role": "Role (for add/edit)",
+          "notify_service": "Notification target (phone)"
         }
       },
       "people_delete_confirm": {
@@ -114,6 +117,13 @@
       "options": {
         "monday": "Monday",
         "sunday": "Sunday"
+      }
+    },
+    "language": {
+      "options": {
+        "auto": "Automatic (system language)",
+        "de": "German",
+        "en": "English"
       }
     }
   }

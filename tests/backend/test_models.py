@@ -39,6 +39,26 @@ class TestPersonValidation:
         person = Person(id=new_id(), name="Björn Müller", color="#ff0000")
         assert person.slug() == "bjorn_muller"
 
+    def test_notify_service_defaults_to_none(self):
+        person = Person(id=new_id(), name="Anna", color="#ff0000")
+        assert person.notify_service is None
+
+    def test_notify_service_round_trips_through_to_dict_from_dict(self):
+        person = Person(
+            id=new_id(), name="Anna", color="#ff0000", notify_service="mobile_app_pixel_7"
+        )
+        data = person.to_dict()
+        assert data["notify_service"] == "mobile_app_pixel_7"
+        restored = Person.from_dict(data)
+        assert restored.notify_service == "mobile_app_pixel_7"
+        assert restored == person
+
+    def test_notify_service_defaults_to_none_when_absent_from_stored_data(self):
+        # Backward compatibility: people stored before this field existed
+        # must still load correctly.
+        person = Person.from_dict({"id": new_id(), "name": "Anna", "color": "#ff0000"})
+        assert person.notify_service is None
+
 
 class TestCategoryValidation:
     def test_valid_category(self):

@@ -3,16 +3,10 @@ import { customElement, state } from "lit/decorators.js";
 import * as api from "./api";
 import { CARD_STYLES } from "./styles";
 import { DEFAULT_COLORS, DEFAULT_ICONS, DEFAULT_REMINDER_MINUTES } from "./const";
-import {
-  addDays,
-  resolveFirstWeekday,
-  startOfMonthGrid,
-  startOfWeek,
-  use24HourFormat,
-} from "./utils/datetime";
+import { addDays, resolveFirstWeekday, startOfMonthGrid, use24HourFormat } from "./utils/datetime";
 import { debounce } from "./utils/debounce";
 import { filterEvents } from "./utils/filter-events";
-import { t } from "./utils/localize";
+import { resolveLanguage, t } from "./utils/localize";
 import type { HomeAssistant, LovelaceCardConfig } from "./ha-types";
 import {
   DEFAULT_CONFIG,
@@ -27,7 +21,7 @@ import type { ViewCallbacks, ViewContext } from "./views/context";
 import { renderDayView } from "./views/day";
 import { renderMonthView } from "./views/month";
 import { renderFilteredEventList } from "./views/shared";
-import { renderWeekView } from "./views/week";
+import { computeWeekDays, renderWeekView } from "./views/week";
 import "./components/event-dialog";
 import "./components/event-detail-dialog";
 import "./components/day-detail-dialog";
@@ -63,6 +57,7 @@ export class FamilyPlannerCard extends LitElement {
   @state() private _requirePerson = true;
   @state() private _enableCategories = true;
   @state() private _enableStatus = true;
+  @state() private _language = "auto";
   @state() private _defaultReminderMinutes = DEFAULT_REMINDER_MINUTES;
   @state() private _defaultColors: string[] = DEFAULT_COLORS;
   @state() private _defaultIcons: string[] = DEFAULT_ICONS;
@@ -157,6 +152,9 @@ export class FamilyPlannerCard extends LitElement {
       this._requirePerson = Boolean(cfg.options.require_person ?? true);
       this._enableCategories = Boolean(cfg.options.enable_categories ?? true);
       this._enableStatus = Boolean(cfg.options.enable_status ?? true);
+      const languageOpt = cfg.options.language;
+      this._language =
+        languageOpt === "auto" || languageOpt === "de" || languageOpt === "en" ? languageOpt : "auto";
       const reminderOpt = cfg.options.default_reminder_minutes;
       this._defaultReminderMinutes =
         typeof reminderOpt === "number" && Number.isFinite(reminderOpt) ? reminderOpt : DEFAULT_REMINDER_MINUTES;
@@ -212,6 +210,15 @@ export class FamilyPlannerCard extends LitElement {
     this._unsubBus.push(() => this._hass?.connection.removeEventListener("disconnected", onLost));
   }
 
+  /** The language used for every `t()` UI-string lookup in the card's own
+   * templates and in every view/dialog it renders: the integration's
+   * `options.language` setting ("auto" | "de" | "en") resolved against the
+   * viewer's own `hass.language` (see utils/localize.ts's resolveLanguage()
+   * for the "auto" = defer-to-viewer, otherwise = admin override rule). */
+  private _resolvedLanguage(): string {
+    return resolveLanguage(this._language, this._hass?.language ?? "de");
+  }
+
   private _computeRange(): { start: Date; end: Date } {
     const firstWeekday = resolveFirstWeekday(this._hass!, this._config.first_weekday);
     if (this._view === "today") {
@@ -225,8 +232,12 @@ export class FamilyPlannerCard extends LitElement {
       return { start, end: addDays(start, 1) };
     }
     if (this._view === "week") {
-      const start = startOfWeek(this._currentDate, firstWeekday);
-      return { start, end: addDays(start, 7) };
+      // Must match the rolling 7-day forecast window rendered by
+      // views/week.ts's computeWeekDays() - a plain 7-day span starting at
+      // _currentDate, not a snap to the Mon-Sun/Sun-Sat calendar week (see
+      // that file's header comment for the full rationale).
+      const days = computeWeekDays(this._currentDate);
+      return { start: days[0], end: addDays(days[0], 7) };
     }
     if (this._view === "month") {
       const start = startOfMonthGrid(this._currentDate, firstWeekday);
@@ -313,6 +324,12 @@ export class FamilyPlannerCard extends LitElement {
         next = addDays(next, direction);
         break;
       case "week":
+        // The week view is a rolling 7-day forecast window (see
+        // views/week.ts), so "next/previous" most sensibly shifts that
+        // whole window by 7 days at a time - i.e. the same "next 7 days"
+        // framing repeats, just starting a week later/earlier - rather
+        // than, say, shifting by 1 day (which would barely change what's
+        // visible) or jumping by some other interval.
         next = addDays(next, 7 * direction);
         break;
       case "month":
@@ -392,7 +409,7 @@ export class FamilyPlannerCard extends LitElement {
     } catch (err) {
       this._dialogError =
         err instanceof api.FamilyPlannerApiError
-          ? t(this._hass.language, `error.${err.code}`)
+          ? t(this._resolvedLanguage(), `error.${err.code}`)
           : err instanceof Error
             ? err.message
             : String(err);
@@ -471,10 +488,12 @@ export class FamilyPlannerCard extends LitElement {
       return new Intl.DateTimeFormat(lang, { weekday: "long", day: "numeric", month: "long" }).format(this._currentDate);
     }
     if (this._view === "week") {
-      const start = startOfWeek(this._currentDate, resolveFirstWeekday(hass, this._config.first_weekday));
-      const end = addDays(start, 6);
+      // Matches the rolling 7-day forecast window from _computeRange()/
+      // views/week.ts - the range label reflects the same [currentDate,
+      // currentDate+6] span that's actually displayed, not a calendar week.
+      const days = computeWeekDays(this._currentDate);
       const fmt = new Intl.DateTimeFormat(lang, { day: "numeric", month: "short" });
-      return `${fmt.format(start)} – ${fmt.format(end)}`;
+      return `${fmt.format(days[0])} – ${fmt.format(days[6])}`;
     }
     if (this._view === "month") {
       return new Intl.DateTimeFormat(lang, { month: "long", year: "numeric" }).format(this._currentDate);
@@ -501,6 +520,7 @@ export class FamilyPlannerCard extends LitElement {
       categories: this._categories,
       currentDate: this._view === "today" ? new Date() : this._currentDate,
       now: new Date(),
+      language: this._resolvedLanguage(),
       firstWeekday: resolveFirstWeekday(this._hass!, this._config.first_weekday),
       use24h: use24HourFormat(this._hass!, this._config.time_format),
       callbacks,
@@ -526,7 +546,7 @@ export class FamilyPlannerCard extends LitElement {
     if (!this._config.show_filters) {
       return nothing;
     }
-    const lang = this._hass?.language;
+    const lang = this._resolvedLanguage();
     const activeCount = this._selectedPersonIds.length + this._selectedCategoryIds.length;
     return html`
       <button
@@ -548,7 +568,7 @@ export class FamilyPlannerCard extends LitElement {
     if (!this._config.show_filters || !this._filtersExpanded) {
       return nothing;
     }
-    const lang = this._hass?.language;
+    const lang = this._resolvedLanguage();
     return html`
       <div class="fp-filterbar">
         <button
@@ -594,7 +614,7 @@ export class FamilyPlannerCard extends LitElement {
     if (!this._hass || !this._config) {
       return html`<ha-card><div class="fp-loading">…</div></ha-card>`;
     }
-    const lang = this._hass.language;
+    const lang = this._resolvedLanguage();
     return html`
       <ha-card>
         ${this._connectionLost
@@ -705,6 +725,7 @@ export class FamilyPlannerCard extends LitElement {
         ? html`
             <family-planner-event-dialog
               .hass=${this._hass}
+              .language=${this._language}
               .config=${this._config}
               .people=${this._people}
               .categories=${this._categories}
@@ -726,6 +747,7 @@ export class FamilyPlannerCard extends LitElement {
         ? html`
             <family-planner-event-detail-dialog
               .hass=${this._hass}
+              .language=${this._language}
               .people=${this._people}
               .categories=${this._categories}
               .event=${this._detailEvent}
@@ -743,6 +765,7 @@ export class FamilyPlannerCard extends LitElement {
         ? html`
             <family-planner-day-detail-dialog
               .hass=${this._hass}
+              .language=${this._language}
               .people=${this._people}
               .categories=${this._categories}
               .date=${this._dayDetail.date}
@@ -764,6 +787,7 @@ export class FamilyPlannerCard extends LitElement {
         ? html`
             <family-planner-people-manager-dialog
               .hass=${this._hass}
+              .language=${this._language}
               .people=${this._people}
               .defaultColors=${this._defaultColors}
               @fp-people-changed=${() => void this._refreshPeople()}
@@ -775,6 +799,7 @@ export class FamilyPlannerCard extends LitElement {
         ? html`
             <family-planner-category-manager-dialog
               .hass=${this._hass}
+              .language=${this._language}
               .categories=${this._categories}
               .defaultColors=${this._defaultColors}
               .defaultIcons=${this._defaultIcons}

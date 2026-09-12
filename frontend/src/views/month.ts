@@ -28,7 +28,7 @@ export function renderMonthView(ctx: ViewContext): TemplateResult {
     weeks.push(week);
   }
 
-  const weekdayHeaders = weeks[0].map((d) => t(ctx.hass.language, `weekday.short.${d.getDay()}`));
+  const weekdayHeaders = weeks[0].map((d) => t(ctx.language, `weekday.short.${d.getDay()}`));
   const gridTemplateColumns = `${showWeekNumbers ? "32px " : ""}repeat(${weeks[0].length}, 1fr)`;
 
   const eventsForDay = (day: Date): FamilyEvent[] =>
@@ -57,7 +57,7 @@ export function renderMonthView(ctx: ViewContext): TemplateResult {
         (week) => html`
           <div class="fp-month-week" style="grid-template-columns:${gridTemplateColumns}">
             ${showWeekNumbers
-              ? html`<div class="fp-month-weeknum">${t(ctx.hass.language, "calendar_week_short")}${isoWeekNumber(week[0])}</div>`
+              ? html`<div class="fp-month-weeknum">${t(ctx.language, "calendar_week_short")}${isoWeekNumber(week[0])}</div>`
               : nothing}
             ${week.map((day) => {
               const dayEvents = eventsForDay(day);
@@ -81,7 +81,7 @@ export function renderMonthView(ctx: ViewContext): TemplateResult {
                             ctx.callbacks.onMoreClick(day, dayEvents);
                           }}
                         >
-                          ${t(ctx.hass.language, "month.more", { count: overflow })}
+                          ${t(ctx.language, "month.more", { count: overflow })}
                         </button>`
                       : nothing}
                   </div>

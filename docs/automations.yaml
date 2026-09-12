@@ -1,39 +1,38 @@
-# Beispiel-Automationen für Family Planner.
-# Diese Datei ist zum Kopieren gedacht (Einstellungen -> Automationen ->
-# Automation bearbeiten -> YAML-Modus), nicht zum direkten Einbinden.
-# Alle Beispiele verwenden ausschließlich Actions/Events, die diese
-# Integration tatsächlich bereitstellt (siehe services.yaml und README).
+# Example automations for Family Planner.
+# This file is meant to be copied from (Settings -> Automations -> Edit
+# automation -> YAML mode), not included directly.
+# Every example uses only actions/events this integration actually
+# provides (see services.yaml and the README).
 
-# 1) Morgens um 07:00 Uhr eine Zusammenfassung der heutigen Termine senden.
-- alias: "Family Planner - Morgen-Zusammenfassung"
+# 1) Send a summary of today's events every morning at 07:00.
+- alias: "Family Planner - Morning summary"
   trigger:
     - trigger: time
       at: "07:00:00"
   action:
     - action: family_planner.get_today_events
-      response_variable: heute
+      response_variable: today
     - variables:
-        anzahl: "{{ heute.events | count }}"
-        liste: >-
-          {{ heute.events | map(attribute='title') | list | join(', ') }}
+        count: "{{ today.events | count }}"
+        list: >-
+          {{ today.events | map(attribute='title') | list | join(', ') }}
     - action: notify.notify
       data:
-        title: "Familienkalender"
+        title: "Family calendar"
         message: >-
-          {% if anzahl == 0 %}
-            Heute stehen keine Termine an.
+          {% if count == 0 %}
+            No events today.
           {% else %}
-            Heute stehen {{ anzahl }} Termine an: {{ liste }}.
+            {{ count }} event(s) today: {{ list }}.
           {% endif %}
 
-# 2) 30 Minuten vor einem Termin einer bestimmten Person benachrichtigen.
-#    Voraussetzung: Der Termin hat die Erinnerung "30 Minuten vorher" gesetzt
-#    (Termin bearbeiten -> Erinnerungen). Die Integration selbst verschickt
-#    keine Benachrichtigungen - sie feuert nur family_planner_reminder_due;
-#    das Filtern nach Person und das eigentliche Benachrichtigen übernimmt
-#    diese Automation. Ersetze "anna" durch die tatsächliche Personen-ID
-#    (siehe Personenverwaltung in der Karte).
-- alias: "Family Planner - Erinnerung 30 Minuten vorher (Anna)"
+# 2) Notify 30 minutes before a specific person's event.
+#    Requirement: the event has the "30 minutes before" reminder set (edit
+#    event -> Reminders). The integration itself never sends notifications
+#    - it only fires family_planner_reminder_due; filtering by person and
+#    the actual notification are handled by this automation. Replace "anna"
+#    with the real person ID (see people management in the card).
+- alias: "Family Planner - Reminder 30 minutes before (Anna)"
   trigger:
     - trigger: event
       event_type: family_planner_reminder_due
@@ -45,47 +44,47 @@
   action:
     - action: notify.notify
       data:
-        title: "Gleich geht's los"
-        message: "{{ trigger.event.data.title }} beginnt in 30 Minuten."
+        title: "Coming up soon"
+        message: "{{ trigger.event.data.title }} starts in 30 minutes."
 
-# 3) Auf neu erstellte oder geänderte Termine reagieren (z. B. Logbuch-Eintrag,
-#    Dashboard-Aktualisierung, Sprachausgabe).
-- alias: "Family Planner - Auf Terminänderungen reagieren"
+# 3) React to newly created or changed events (e.g. a logbook entry,
+#    refreshing a dashboard, text-to-speech).
+- alias: "Family Planner - React to event changes"
   trigger:
     - trigger: event
       event_type: family_planner_event_created
-      id: erstellt
+      id: created
     - trigger: event
       event_type: family_planner_event_updated
-      id: geaendert
+      id: updated
   action:
     - action: logbook.log
       data:
-        name: "Familienkalender"
+        name: "Family calendar"
         message: >-
-          Termin "{{ trigger.event.data.title }}"
-          {{ 'erstellt' if trigger.id == 'erstellt' else 'geändert' }}.
+          Event "{{ trigger.event.data.title }}"
+          {{ 'created' if trigger.id == 'created' else 'updated' }}.
 
-# 4) Beim Start irgendeines Termins kurz eine LED als Hinweis aktivieren.
-#    Das family_planner_event_started-Event liefert nur Personen-IDs, keine
-#    Farben. Für eine LED in der jeweiligen Personenfarbe lege pro Person
-#    einen eigenen input_text-Helfer mit deren Hex-Farbe an (z. B.
-#    input_text.person_color_<person_id>) und pflege ihn beim Anlegen der
-#    Person einmalig - Home Assistant selbst bietet keine automatische
-#    Personen-ID-zu-Farbe-Abfrage außerhalb der Family-Planner-API.
-- alias: "Family Planner - LED bei Terminstart"
+# 4) Briefly turn on an LED as a hint whenever any event starts.
+#    The family_planner_event_started event only carries person IDs, not
+#    colors. For an LED in the assigned person's own color, create one
+#    input_text helper per person holding their hex color (e.g.
+#    input_text.person_color_<person_id>) and fill it in once when you
+#    create the person - Home Assistant itself has no built-in
+#    person-ID-to-color lookup outside the Family Planner API.
+- alias: "Family Planner - LED on event start"
   trigger:
     - trigger: event
       event_type: family_planner_event_started
   action:
     - action: light.turn_on
       target:
-        entity_id: light.buero_led
+        entity_id: light.office_led
       data:
         color_name: white
 
-# 5) Terminstatus per Automation auf "erledigt" setzen, sobald ein Termin endet.
-- alias: "Family Planner - Automatisch als erledigt markieren"
+# 5) Automatically set an event's status to "done" once it ends.
+- alias: "Family Planner - Automatically mark as done"
   trigger:
     - trigger: event
       event_type: family_planner_event_ended

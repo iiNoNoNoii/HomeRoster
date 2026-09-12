@@ -4,7 +4,7 @@ import { customElement, property } from "lit/decorators.js";
 import "./dialog-shell";
 import { resolveEventColor } from "../utils/colors";
 import { eventTimeLabel, personsForEvent, renderPersonDots } from "../views/shared";
-import { t } from "../utils/localize";
+import { resolveLanguage, t } from "../utils/localize";
 import type { HomeAssistant } from "../ha-types";
 import type { Category, FamilyEvent, Person } from "../types";
 
@@ -53,6 +53,9 @@ export class FamilyPlannerDayDetailDialog extends LitElement {
   static styles = STYLES;
 
   @property({ attribute: false }) hass!: HomeAssistant;
+  // See event-dialog.ts's `language` property for the "auto" vs explicit
+  // override contract.
+  @property({ type: String }) language = "auto";
   @property({ attribute: false }) people: Person[] = [];
   @property({ attribute: false }) categories: Category[] = [];
   @property({ attribute: false }) date!: Date;
@@ -64,10 +67,16 @@ export class FamilyPlannerDayDetailDialog extends LitElement {
   }
 
   protected render(): TemplateResult {
-    const lang = this.hass?.language;
-    const heading = new Intl.DateTimeFormat(lang || "de", { weekday: "long", day: "numeric", month: "long" }).format(
-      this.date
-    );
+    const lang = resolveLanguage(this.language, this.hass?.language ?? "auto");
+    // Intl-based date formatting stays keyed to the viewer's actual
+    // hass.language (not the resolved t() language) - it depends on more
+    // than a two-letter UI language code, unlike the plain string lookups
+    // below.
+    const heading = new Intl.DateTimeFormat(this.hass?.language || "de", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+    }).format(this.date);
     return html`
       <family-planner-dialog-shell .heading=${heading} @fp-shell-close=${() => this._close()}>
         ${this.events.map((event) => {

@@ -1,144 +1,158 @@
+*[Deutsche Version](README.de.md)*
+
 # Family Planner
 
-Ein vollständig **lokaler** digitaler Familienkalender für Home Assistant –
-ohne Cloud-Dienst, ohne externen Account, ohne Internetverbindung im
-Normalbetrieb. Family Planner besteht aus einer Custom Integration (Python)
-als Backend und einer eigenen Lovelace-Karte (TypeScript/Lit) als Frontend.
+A fully **local** digital family calendar for Home Assistant – no cloud
+service, no external account, no internet connection needed for normal
+operation. Family Planner consists of a custom integration (Python) as the
+backend and its own Lovelace card (TypeScript/Lit) as the frontend.
 
-> **Kein Google Calendar, kein iCloud, kein Homsy-Cloud-Dienst nötig.** Alle
-> Termine, Personen und Kategorien werden ausschließlich in Home Assistants
-> eigenem Storage gespeichert.
+> **No Google Calendar, no iCloud, no vendor cloud service required.** All
+> events, people and categories are stored exclusively in Home Assistant's
+> own storage.
 
-## Inhalt
+[![Buy Me A Coffee](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://buymeacoffee.com/iinononoii)
 
-- [Funktionsübersicht](#funktionsübersicht)
+## Contents
+
+- [Feature overview](#feature-overview)
 - [Screenshots](#screenshots)
-- [Voraussetzungen](#voraussetzungen)
+- [Requirements](#requirements)
 - [Installation](#installation)
-- [Einrichtung](#einrichtung)
-- [Kartenkonfiguration](#kartenkonfiguration)
-- [Personenverwaltung](#personenverwaltung)
-- [Kategorien und Status](#kategorien-und-status)
-- [Wiederholende Termine](#wiederholende-termine)
-- [Erinnerungen](#erinnerungen)
-- [Entities, Sensoren und Services](#entities-sensoren-und-services)
-- [Automationsbeispiele](#automationsbeispiele)
-- [Dashboard-Zusatzkarten](#dashboard-zusatzkarten)
-- [Backup, Import und Export](#backup-import-und-export)
-- [Datenschutz und Berechtigungen](#datenschutz-und-berechtigungen)
-- [Diagnose](#diagnose)
-- [Bekannte Einschränkungen](#bekannte-einschränkungen)
-- [Fehlerbehebung](#fehlerbehebung)
-- [Upgrade- und Migrationshinweise](#upgrade--und-migrationshinweise)
-- [Entwicklung](#entwicklung)
-- [Abnahmekriterien (MVP)](#abnahmekriterien-mvp)
-- [Entwicklungsphasen](#entwicklungsphasen)
-- [Lizenz](#lizenz)
+- [Setup](#setup)
+- [Card configuration](#card-configuration)
+- [People management](#people-management)
+- [Categories and status](#categories-and-status)
+- [Recurring events](#recurring-events)
+- [Reminders](#reminders)
+- [Entities, sensors and services](#entities-sensors-and-services)
+- [Automation examples](#automation-examples)
+- [Additional dashboard cards](#additional-dashboard-cards)
+- [Backup, import and export](#backup-import-and-export)
+- [Privacy and permissions](#privacy-and-permissions)
+- [Diagnostics](#diagnostics)
+- [Known limitations](#known-limitations)
+- [Troubleshooting](#troubleshooting)
+- [Upgrade and migration notes](#upgrade-and-migration-notes)
+- [Development](#development)
+- [Acceptance criteria (MVP)](#acceptance-criteria-mvp)
+- [Development phases](#development-phases)
+- [License](#license)
 
-## Funktionsübersicht
+## Feature overview
 
-- Eigene Kalenderkarte mit Tages-, Wochen-, Monats- und Agenda-Ansicht sowie
-  einer "Heute"-Ansicht.
-- Termine mit Titel, Untertitel, Ort, Beschreibung, Kategorie, Farbe, Icon,
-  Status, mehreren zugewiesenen Personen, Erinnerungen und optionaler
-  Wiederholung.
-- Mehrere Personen pro Termin – intern ein einziger Datensatz, keine
-  Duplikate.
-- Überlappende Termine werden nebeneinander in eigenen Spuren ("Lanes")
-  dargestellt, nie verdeckt.
-- Eigene Personen- und Kategorienverwaltung mit Sicherheitsabfrage beim
-  Löschen von Personen (Termine gehen nie verloren).
-- Standardkonforme `calendar`-Entities (Gesamtkalender + ein gefilterter
-  Kalender je aktiver Person), nutzbar von jeder anderen Kalenderkarte und
-  in Automationen.
-- Sensoren für heutige Termine, morgige Termine, nächsten Termin, nächsten
-  Geburtstag – jeweils auch pro Person – sowie ein "Termin aktiv"-
-  Binärsensor.
-- Services/Actions für Termin-CRUD, Abfragen und Statusänderungen, mit
-  Schema und Selektoren im UI-Aktionseditor nutzbar.
-- WebSocket-API für die Karte: Termine, Personen und Kategorien werden nie
-  ausschließlich im Browser gehalten.
-- Deutsche und englische Übersetzung, Dark Mode und mobile Darstellung über
-  Home-Assistant-Theme-Variablen.
+- A dedicated calendar card with day, week, month and agenda views, plus a
+  "Today" view. The week view shows a rolling 7-day preview starting from
+  the currently selected date (like a weather app's forecast), with its
+  own section per day, instead of a fixed Monday–Sunday calendar week.
+- Events with title, subtitle, location, description, category, color,
+  icon, status, multiple assigned people, reminders and optional
+  recurrence.
+- Multiple people per event – internally a single record, no duplicates.
+- Overlapping events are shown side by side in their own lanes, never
+  hidden behind each other.
+- A dedicated people and category manager with a confirmation prompt when
+  deleting a person (events are never lost).
+- Standards-compliant `calendar` entities (an overall calendar plus one
+  filtered calendar per active person), usable from any other calendar
+  card and in automations.
+- Sensors for today's events, tomorrow's events, the next event, the next
+  birthday – each also available per person – plus an "event active"
+  binary sensor.
+- Services/actions for event CRUD, queries and status changes, with schema
+  and selectors usable in the UI action editor.
+- A WebSocket API for the card: events, people and categories are never
+  held exclusively in the browser.
+- German and English translation, dark mode and mobile layout via Home
+  Assistant theme variables. The card language can also be pinned to
+  German or English for the whole installation, independent of each
+  individual user's own language setting (see
+  [Card configuration](#card-configuration)).
+- Optional push notifications for reminders via the Home Assistant
+  Companion App, in addition to the existing reminder event (see
+  [Reminders](#reminders)).
 
-Eine genaue Zuordnung der Funktionen zu MVP/Phase 2/Phase 3 steht am Ende
-dieser README unter [Entwicklungsphasen](#entwicklungsphasen).
+An exact mapping of features to MVP/Phase 2/Phase 3 is at the end of this
+README under [Development phases](#development-phases).
 
 ## Screenshots
 
-Diese README enthält bewusst keine eingebetteten Bilddateien. So erstellst
-du eigene Screenshots für dein Repository:
+This README deliberately contains no embedded image files – there is no
+live Home Assistant instance available for this documentation pass to
+capture authentic screenshots from, and fabricated placeholder images
+would be misleading. Here's how to add your own screenshots to your
+repository:
 
-1. Karte in einem Dashboard einrichten (siehe unten) und mit ein paar
-   Beispielterminen füllen.
-2. Wochenansicht, Monatsansicht und den Termin-Dialog jeweils als PNG
-   sichern (Browser-Screenshot oder Home-Assistant-App).
-3. Dateien unter `docs/screenshots/` ablegen, z. B.
-   `docs/screenshots/week-view.png`, und hier mit
-   `![Wochenansicht](docs/screenshots/week-view.png)` einbinden.
+1. Set up the card on a dashboard (see below) and fill it with a few
+   example events.
+2. Capture the week view, month view and the event dialog as PNG files
+   (browser screenshot or the Home Assistant app).
+3. Save the files under `docs/screenshots/`, e.g.
+   `docs/screenshots/week-view.png`, and embed them here with
+   `![Week view](docs/screenshots/week-view.png)`.
 
-## Voraussetzungen
+## Requirements
 
-- **Home Assistant Core 2024.10.0 oder neuer.** Diese Integration nutzt die
-  Calendar-Entity-CRUD-Unterstützung (`CalendarEntityFeature.CREATE_EVENT`
-  / `UPDATE_EVENT` / `DELETE_EVENT`) sowie `async_register_static_paths`
-  zur automatischen Registrierung der Lovelace-Karte – beides Home-
-  Assistant-APIs, die erst ab 2024 verfügbar sind. `manifest.json` setzt
-  `min_ha_version` entsprechend; ältere Installationen lehnen das Laden der
-  Integration kontrolliert ab.
-- HACS (empfohlen) oder Zugriff auf das `custom_components`-Verzeichnis für
-  eine manuelle Installation.
-- Keine weiteren Cloud-Konten, keine zusätzliche Hardware.
+- **Home Assistant Core 2024.10.0 or newer.** This integration relies on
+  calendar entity CRUD support (`CalendarEntityFeature.CREATE_EVENT` /
+  `UPDATE_EVENT` / `DELETE_EVENT`) as well as `async_register_static_paths`
+  for automatically registering the Lovelace card – both are Home
+  Assistant APIs that only became available in 2024. `manifest.json` sets
+  `min_ha_version` accordingly; older installations refuse to load the
+  integration in a controlled way.
+- HACS (recommended) or access to the `custom_components` directory for a
+  manual installation.
+- No further cloud accounts, no additional hardware.
 
 ## Installation
 
-### Über HACS
+### Via HACS
 
-1. HACS öffnen → **Integrationen** → Menü (⋮) → **Benutzerdefinierte
-   Repositories**.
-2. Repository-URL dieses Projekts eintragen, Kategorie **Integration**
-   wählen, hinzufügen.
-3. "Family Planner" in HACS suchen und installieren.
-4. Home Assistant neu starten.
+1. Open HACS → **Integrations** → menu (⋮) → **Custom repositories**.
+2. Add this project's repository URL
+   (`https://github.com/iiNoNoNoii/HomeRoster`), choose category
+   **Integration**, and add it.
+3. Search for "Family Planner" in HACS and install it.
+4. Restart Home Assistant.
 
-### Manuell
+### Manual
 
-1. Den Ordner `custom_components/family_planner` dieses Repositories nach
-   `<config>/custom_components/family_planner` kopieren.
-2. Sicherstellen, dass `custom_components/family_planner/www/family-planner-card.js`
-   vorhanden ist (im Repository bereits mitgebaut; siehe
-   [Entwicklung](#entwicklung), falls du die Karte selbst neu bauen willst).
-3. Home Assistant neu starten.
+1. Copy this repository's `custom_components/family_planner` folder to
+   `<config>/custom_components/family_planner`.
+2. Make sure `custom_components/family_planner/www/family-planner-card.js`
+   is present (it's already built and included in the repository; see
+   [Development](#development) if you want to rebuild the card yourself).
+3. Restart Home Assistant.
 
-## Einrichtung
+## Setup
 
-1. **Einstellungen → Geräte & Dienste → Integration hinzufügen** → "Family
-   Planner" suchen → Einrichten. Es wird kein Konto und keine externe
-   Anmeldung benötigt.
-2. Die Integration registriert die Lovelace-Karte automatisch (über
-   `add_extra_js_url`) – in der Regel ist **kein manuelles Hinzufügen einer
-   Lovelace-Ressource nötig**. Die genaue URL enthält einen Cache-Busting-Hash
-   und wechselt bei jedem Update der Karte (z. B.
-   `/family_planner_static/family-planner-card-<hash>.js`); die aktuell
-   registrierte URL steht im Home-Assistant-Log (INFO-Meldung „Family
-   Planner: Lovelace-Karte erfolgreich unter … registriert“) sowie unter
-   **Einstellungen → Dashboards → Ressourcen**. Erscheint die Karte trotzdem
-   nicht im Karten-Picker, füge sie dort manuell mit genau dieser URL hinzu,
-   Typ „JavaScript-Modul“.
-3. Über **Personen verwalten**/**Kategorien verwalten** in der Karte (oder
-   in den Integrationsoptionen, siehe unten) erste Familienmitglieder
-   anlegen.
-4. Karte zu einem Dashboard hinzufügen (siehe nächster Abschnitt).
+1. **Settings → Devices & Services → Add Integration** → search for
+   "Family Planner" → set it up. No account and no external sign-in is
+   required.
+2. The integration registers the Lovelace card automatically (via
+   `add_extra_js_url`) – in general, **you don't need to add a Lovelace
+   resource manually**. The exact URL contains a cache-busting hash and
+   changes with every card update (e.g.
+   `/family_planner_static/family-planner-card-<hash>.js`); the currently
+   registered URL is logged to the Home Assistant log (an INFO message
+   "Family Planner: Lovelace card successfully registered at …") and shown
+   under **Settings → Dashboards → Resources**. If the card still doesn't
+   show up in the card picker, add it there manually with exactly that
+   URL, type "JavaScript Module".
+3. Use **Manage people**/**Manage categories** in the card (or the
+   integration options, see below) to create your first family members.
+4. Add the card to a dashboard (see the next section).
 
-Administrative Grundeinstellungen (z. B. ob mindestens eine Person pro
-Termin Pflicht ist, ob Nicht-Administratoren Termine bearbeiten dürfen)
-finden sich unter **Einstellungen → Geräte & Dienste → Family Planner →
-Konfigurieren**. Dort lassen sich Personen und Kategorien auch ohne
-geladene Karte anlegen, bearbeiten, umsortieren, deaktivieren und löschen –
-das ist der frontend-unabhängige Fallback-Weg; im Alltag ist die
-Personen-/Kategorienverwaltung direkt in der Karte komfortabler.
+Basic admin settings (e.g. whether at least one person per event is
+required, whether non-administrators are allowed to edit events, the card
+language, or whether reminders are also sent via the Home Assistant app)
+are found under **Settings → Devices & Services → Family Planner →
+Configure**. There you can also create, edit, reorder, disable and delete
+people and categories without the card being loaded – this is the
+frontend-independent fallback path; day to day, managing people/categories
+directly in the card is more convenient.
 
-## Kartenkonfiguration
+## Card configuration
 
 ```yaml
 type: custom:family-planner-card
@@ -174,167 +188,215 @@ read_only: false
 first_weekday: monday
 ```
 
-| Option | Beschreibung | Standard |
+| Option | Description | Default |
 | --- | --- | --- |
-| `title` | Kartentitel | „Familienkalender“ |
+| `title` | Card title | "Familienkalender" |
 | `default_view` | `today` / `day` / `week` / `month` / `agenda` | `week` |
-| `people` | Nur diese Personen-IDs als Filter/Chips anzeigen (leer = alle aktiven) | leer |
-| `preselected_people` | Beim Öffnen vorausgewählte Personen-IDs | leer |
-| `visible_categories` | Nur diese Kategorie-IDs anzeigen (leer = alle aktiven) | leer |
-| `show_filters` / `show_search` / `show_add_button` | Filterleiste, Suchfeld, Plus-Schaltfläche ein-/ausblenden | `true` |
-| `allow_edit` | Bearbeiten grundsätzlich erlauben (siehe auch `read_only`) | `true` |
-| `read_only` | Kiosk-/Nur-Lesen-Modus: keine Bearbeiten-Aktionen in der UI | `false` |
-| `show_done_events` / `show_cancelled_events` | Erledigte/abgesagte Termine anzeigen | `true` / `false` |
-| `show_weekends` / `show_week_numbers` | Wochenenden bzw. Kalenderwochen anzeigen | `true` |
-| `start_hour` / `end_hour` / `time_step` | Sichtbarer Zeitbereich und Zeitraster (Minuten) in Tag-/Wochenansicht | `6` / `22` / `30` |
-| `time_format` | `auto` (aus Home-Assistant-Locale), `12`, `24` | `auto` |
-| `max_events_per_day` | Max. sichtbare Termine je Tag in der Monatsansicht, Rest als „+N weitere“ | `3` |
-| `agenda_days` | Zeitraum der Agenda-Ansicht in Tagen | `14` |
-| `dim_past_events` | Vergangene Termine abdunkeln | `true` |
-| `color_mode` | `person` oder `category` als primäre Farbquelle | `person` |
-| `compact` | Kompaktere Darstellung (kleinere Zeilenhöhen) | `false` |
-| `show_now_line` | Rote „Jetzt“-Linie in Tag-/Wochenansicht | `true` |
-| `highlight_today` | Heutiges Datum hervorheben | `true` |
-| `first_weekday` | `monday` oder `sunday` (leer = aus Home-Assistant-Locale) | `monday` |
+| `people` | Show only these person IDs as filter chips (empty = all active) | empty |
+| `preselected_people` | Person IDs preselected when the card opens | empty |
+| `visible_categories` | Show only these category IDs (empty = all active) | empty |
+| `show_filters` / `show_search` / `show_add_button` | Show/hide the filter bar, search field, and add ("+") button | `true` |
+| `allow_edit` | Allow editing in general (see also `read_only`) | `true` |
+| `read_only` | Kiosk/read-only mode: no editing actions in the UI | `false` |
+| `show_done_events` / `show_cancelled_events` | Show done/cancelled events | `true` / `false` |
+| `show_weekends` / `show_week_numbers` | Show weekends, and show calendar week numbers (the latter now effectively only affects the month view, since the week view became a rolling forecast – see the note below) | `true` |
+| `start_hour` / `end_hour` / `time_step` | Visible time range and time grid (minutes) in the day view (the week view is a day-by-day list with no time grid – see the note below) | `6` / `22` / `30` |
+| `time_format` | `auto` (from the Home Assistant locale), `12`, `24` | `auto` |
+| `max_events_per_day` | Max. visible events per day in the month view, remainder shown as "+N more" | `3` |
+| `agenda_days` | Time span of the agenda view, in days | `14` |
+| `dim_past_events` | Dim past events | `true` |
+| `color_mode` | `person` or `category` as the primary color source | `person` |
+| `compact` | More compact layout (smaller row heights) | `false` |
+| `show_now_line` | Red "now" line in the day view | `true` |
+| `highlight_today` | Highlight today's date | `true` |
+| `first_weekday` | `monday` or `sunday` (empty = from the Home Assistant locale); determines the first weekday of the month view (the week view is no longer tied to a fixed calendar week now that it's a rolling 7-day preview – see the note below) | `monday` |
 
-Ein visueller Karteneditor (`ha-form`-basiert) steht im Lovelace-UI-Editor
-zur Verfügung und deckt die wichtigsten Optionen ab.
+**Note on the week view:** The week view no longer shows a fixed calendar
+week (Monday–Sunday or Sunday–Saturday); instead it always shows the 7
+days starting from whatever date is currently selected (today by default,
+or wherever you've navigated to) – similar to a weather app's 7-day
+forecast. Each day is listed as its own section with that day's actual
+events, rather than as a side-by-side time grid. As a result,
+`start_hour`, `end_hour`, `time_step` and `show_now_line` now only apply to
+the day view, and `show_week_numbers`/`first_weekday` effectively only
+matter for the month view, since the week view is no longer bound to a
+single calendar week. The day/"Today" view itself is unchanged: still an
+hour-by-hour time grid for a single day.
 
-## Personenverwaltung
+**Card language:** The integration option "Card language" (**Settings →
+Devices & Services → Family Planner → Configure → General settings**) lets
+you pin the card's language to German or English, regardless of each
+individual viewer's own Home Assistant language setting. The default,
+"Automatic", still follows the language of whichever user is currently
+viewing the card. This is especially useful for a shared wall-tablet
+dashboard where you don't want the language to change depending on who's
+logged in.
 
-Über das Personen-Symbol in der Kartenkopfzeile (nur für Administratoren
-sichtbar) öffnet sich die Personenverwaltung: Hinzufügen, Bearbeiten,
-Umsortieren (Pfeile), Deaktivieren/Aktivieren und Löschen.
+A visual card editor (`ha-form`-based) is available in the Lovelace UI
+editor and covers the most important options.
 
-Beim **Löschen** einer Person wird immer eine Strategie abgefragt:
+## People management
 
-- **Nur deaktivieren** – Person verschwindet aus Auswahllisten, bestehende
-  Termine bleiben unverändert.
-- **Aus Terminen entfernen** – Person wird aus allen zugewiesenen Terminen
-  entfernt; die Termine selbst bleiben erhalten (ggf. ohne
-  Personenzuweisung).
-- **Terminen einer anderen Person zuweisen** – alle Termine der gelöschten
-  Person werden einer Zielperson zugewiesen (Duplikate werden vermieden).
-- **Termine ohne Personenzuweisung behalten** – technisch identisch zu
-  „Aus Terminen entfernen“: Es geht nie ein Termin verloren, nur die
-  Personenzuweisung wird entfernt.
+The people icon in the card's header (visible only to administrators)
+opens people management: adding, editing, reordering (arrows),
+disabling/enabling and deleting.
 
-Eine Person kann optional mit einer vorhandenen `person.*`-Entity verknüpft
-werden (Feld „Verknüpfte Person“ in den Integrationsoptionen); das ist rein
-informativ und nicht erforderlich.
+**Deleting** a person always prompts for a strategy:
 
-## Kategorien und Status
+- **Disable only** – the person disappears from selection lists; existing
+  events remain unchanged.
+- **Remove from events** – the person is removed from all assigned
+  events; the events themselves are kept (possibly with no person
+  assigned).
+- **Reassign events to another person** – all events belonging to the
+  deleted person are reassigned to a target person (duplicates are
+  avoided).
+- **Keep events with no person assigned** – technically identical to
+  "Remove from events": an event is never lost, only the person
+  assignment is removed.
 
-Acht Standardkategorien sind vorbelegt (Schule, Arbeit, Arzt, Freizeit,
-Geburtstag, Urlaub, Haushalt, Sonstiges) und über die Kategorienverwaltung
-frei anpassbar, sortierbar und deaktivierbar. Terminstatus (`planned`,
-`confirmed`, `tentative`, `done`, `cancelled`) lassen sich pro Termin
-setzen; abgesagte Termine werden je nach Karteneinstellung ausgeblendet
-oder durchgestrichen dargestellt.
+A person can optionally be linked to an existing `person.*` entity (the
+"Linked person" field in the integration options); this is purely
+informational and not required.
 
-## Wiederholende Termine
+Also optional, a **notification target** can be set for each person (in
+the card's people manager, or in the people-editing form of the
+integration options) – a Home Assistant `notify.*` service, chosen via a
+standard entity picker. Typically this is one of the services the Home
+Assistant Companion App automatically creates per device (e.g.
+`notify.mobile_app_pixels_phone`). If a target is set and the "Send
+reminders via the Home Assistant app" integration option is enabled, that
+person additionally receives push notifications for their reminders (see
+[Reminders](#reminders)).
 
-Das Datenmodell unterstützt RFC-5545-RRULE-Strings (`rrule`-Feld) und ist
-auf zukünftige Erweiterungen vorbereitet (`recurrence_id`, `exdates`).
-**Aktuell umgesetzt (Phase 1/2):**
+## Categories and status
 
-- Wiederholung täglich, wöchentlich, monatlich oder jährlich, mit
-  optionalem Enddatum, direkt im Termin-Dialog.
-- Bearbeiten/Löschen der **gesamten Serie**.
-- Löschen einer **einzelnen Instanz** (fügt ein `EXDATE` hinzu, ohne die
-  restliche Serie zu berühren).
-- Die Expansion einer Serie ist immer auf den angefragten Zeitraum
-  begrenzt (siehe [Performance](#entwicklung)) – es werden nie unbegrenzt
-  viele Instanzen im Voraus materialisiert.
+Eight default categories are pre-populated (School, Work, Doctor, Leisure,
+Birthday, Vacation, Household, Other) and can be freely customized,
+reordered and disabled via category management. Event status (`planned`,
+`confirmed`, `tentative`, `done`, `cancelled`) can be set per event;
+depending on the card's settings, cancelled events are either hidden or
+shown with a strikethrough.
 
-**Noch nicht umgesetzt (Phase 3):** Bearbeiten einer einzelnen
-Serieninstanz oder „diese und folgende Instanzen“ – beim Versuch, dies über
-die native `calendar.update_event`/`calendar.delete_event`-Action mit
-`recurrence_range` durchzuführen, liefert die Integration eine klare
-Fehlermeldung statt eines falschen Ergebnisses.
+## Recurring events
 
-## Erinnerungen
+The data model supports RFC 5545 RRULE strings (the `rrule` field) and is
+prepared for future extensions (`recurrence_id`, `exdates`). **Currently
+implemented (Phase 1/2):**
 
-Termine können mehrere Erinnerungs-Offsets speichern (zum Start, 5/15/30/60
-Minuten vorher, 1 Tag vorher oder ein frei wählbarer Minutenwert). Die
-Integration sendet **selbst keine Benachrichtigungen** – sie feuert das
-Event `family_planner_reminder_due`, das eine Automation auswertet (siehe
-[Automationsbeispiele](#automationsbeispiele)). Das entkoppelt die
-Zustellung (Mobile App, TTS, Licht, …) vollständig vom Kalender.
+- Daily, weekly, monthly or yearly recurrence, with an optional end date,
+  directly in the event dialog.
+- Editing/deleting the **entire series**.
+- Deleting a **single instance** (adds an `EXDATE` without touching the
+  rest of the series).
+- Expanding a series is always limited to the requested time range (see
+  [Development](#development)) – it never materializes an unbounded number
+  of instances ahead of time.
 
-Verhalten in Sonderfällen:
+**Not yet implemented (Phase 3):** editing a single series instance, or
+"this and following instances" – attempting this via the native
+`calendar.update_event`/`calendar.delete_event` action with
+`recurrence_range` gives the integration's clear error message instead of
+a silently wrong result.
 
-| Situation | Verhalten |
+## Reminders
+
+Events can store multiple reminder offsets (at start time, 5/15/30/60
+minutes before, 1 day before, or a freely chosen number of minutes). The
+integration fires the `family_planner_reminder_due` event when a reminder
+is due, which an automation then evaluates (see [Automation
+examples](#automation-examples)); this fully decouples delivery (mobile
+app, TTS, lights, …) from the calendar.
+
+Optionally, the integration can also deliver reminders automatically as a
+push notification via the Home Assistant Companion App. Via the
+integration option **"Send reminders via the Home Assistant app"**
+(**Settings → Devices & Services → Family Planner → Configure**, default:
+on), the integration automatically calls the `notify.*` service configured
+for each assigned person, at that person's configured reminder time – in
+addition to (not instead of) the `family_planner_reminder_due` event, so
+existing custom automations keep working unchanged. This requires **both**
+conditions to be true: the global option is enabled, **and** that specific
+person has a notification target configured (see [People
+management](#people-management)). If either condition isn't met, nothing
+changes from today's behavior – only the bus event is still fired. The
+integration therefore still never forces notifications on you; they're
+entirely optional and opt-in per person.
+
+Behavior in edge cases:
+
+| Situation | Behavior |
 | --- | --- |
-| Neustart kurz vor einer Erinnerung | Erinnerung wird nach dem Start regulär geprüft und ausgelöst, sobald der erste Prüf-Tick (Standard: alle 30s) läuft. |
-| Neustart während ein Termin läuft | `family_planner_event_started` wird beim ersten Tick nach dem Start nachgeholt, sofern der Termin dann noch aktiv ist; die Aktiv-Sensoren zeigen den korrekten Zustand sofort nach dem Laden. |
-| Bearbeiten eines Termins | Die Menge bereits ausgelöster Erinnerungen bleibt an die (Termin-ID, Instanz, Offset)-Kombination gebunden; Änderungen an Uhrzeit/Offsets können dieselbe Erinnerung erneut fällig werden lassen. |
-| Löschen eines Termins | Offene, noch nicht ausgelöste Erinnerungen verfallen ersatzlos. |
-| Sommer-/Winterzeitwechsel | Alle internen Zeitvergleiche laufen in UTC; die lokale Zeitzone wird nur für die Anzeige und für ganztägige Termine verwendet – DST-Wechsel verschieben keine Erinnerungszeitpunkte. |
-| Verpasste Erinnerung (Home Assistant war offline) | Wird die Erinnerung innerhalb von 1 Stunde nach dem eigentlichen Fälligkeitszeitpunkt nachgeholt, feuert das Event trotzdem (einmalig). Liegt der Fälligkeitszeitpunkt weiter zurück, wird die Erinnerung als „gesehen“ markiert, aber **nicht** nachträglich gefeuert, um keine Flut veralteter Benachrichtigungen zu erzeugen. |
+| Restart shortly before a reminder | The reminder is checked and fired normally after startup, as soon as the first check tick runs (default: every 30s). |
+| Restart while an event is in progress | `family_planner_event_started` is fired retroactively on the first tick after startup, provided the event is still active at that point; the "active" sensors show the correct state immediately after loading. |
+| Editing an event | The set of already-fired reminders stays bound to the (event ID, instance, offset) combination; changing the time/offsets can make the same reminder become due again. |
+| Deleting an event | Pending, not-yet-fired reminders simply lapse. |
+| Daylight saving time change | All internal time comparisons run in UTC; the local timezone is only used for display and for all-day events – DST changes never shift reminder times. |
+| Missed reminder (Home Assistant was offline) | If the reminder is caught up within 1 hour of its actual due time, the event still fires (once). If the due time is further in the past, the reminder is marked as "seen" but is **not** fired retroactively, to avoid a flood of stale notifications. |
 
-Ausgelöste Erinnerungen werden persistiert und nach 48 Stunden automatisch
-aufgeräumt, damit die Speicherdatei nicht unbegrenzt wächst.
+Fired reminders are persisted and automatically cleaned up after 48 hours
+so the storage file doesn't grow indefinitely.
 
-## Entities, Sensoren und Services
+## Entities, sensors and services
 
-**Calendar-Entities**
+**Calendar entities**
 
-- `calendar.family_planner` – alle Termine, unterstützt Erstellen/
-  Bearbeiten/Löschen über die native `calendar.create_event` /
-  `calendar.update_event` / `calendar.delete_event`-Action.
-- `calendar.family_planner_<person>` – ein schreibgeschützter, nach Person
-  gefilterter Kalender je aktiver Person (Entity-ID aus dem Personennamen
-  abgeleitet, z. B. `calendar.family_planner_anna`).
+- `calendar.family_planner` – all events; supports creating/editing/
+  deleting via the native `calendar.create_event` / `calendar.update_event`
+  / `calendar.delete_event` action.
+- `calendar.family_planner_<person>` – a read-only calendar filtered by
+  person, one per active person (entity ID derived from the person's name,
+  e.g. `calendar.family_planner_anna`).
 
-**Sensoren**
+**Sensors**
 
-- `sensor.family_planner_events_today` / `..._today_<person>` – Anzahl
-  (State) und Liste (Attribut `events`, auf 20 begrenzt) der heutigen
-  Termine.
-- `sensor.family_planner_events_tomorrow` – Anzahl der morgigen Termine.
-- `sensor.family_planner_next_event` / `..._next_event_<person>` –
-  Timestamp-Sensor, State = ISO-Zeitpunkt des nächsten (oder laufenden)
-  Termins bzw. `unbekannt`, Attribute inkl. Titel, Ort, Personen, Kategorie.
-- `sensor.family_planner_next_birthday` – nächster Termin der Kategorie
-  „Geburtstag“, sofern vorhanden.
-- `binary_sensor.family_planner_event_active` / `..._event_active_<person>`
-  – an, solange mindestens ein (nicht abgesagter) Termin aktiv läuft.
+- `sensor.family_planner_events_today` / `..._today_<person>` – count
+  (state) and list (the `events` attribute, capped at 20) of today's
+  events.
+- `sensor.family_planner_events_tomorrow` – count of tomorrow's events.
+- `sensor.family_planner_next_event` / `..._next_event_<person>` – a
+  timestamp sensor; state = the ISO timestamp of the next (or currently
+  running) event, or "unknown"; attributes include title, location,
+  people, category.
+- `sensor.family_planner_next_birthday` – the next event in the
+  "Birthday" category, if any.
+- `binary_sensor.family_planner_event_active` /
+  `..._event_active_<person>` – on as long as at least one (non-cancelled)
+  event is currently active.
 
-Sensoren aktualisieren sich ausschließlich bei tatsächlichen Änderungen
-(Termin angelegt/geändert/gelöscht, Start/Ende-Übergang, Tageswechsel) –
-nicht sekündlich.
+Sensors update only on actual changes (event created/changed/deleted,
+start/end transitions, day changes) – not on a per-second basis.
 
-**Services/Actions** (Domain `family_planner`, siehe `services.yaml` für
-alle Felder und Selektoren):
+**Services/actions** (domain `family_planner`; see `services.yaml` for
+all fields and selectors):
 
 `create_event`, `update_event`, `delete_event`, `get_events`,
 `get_today_events`, `get_next_event`, `duplicate_event`,
 `set_event_status`.
 
-**Events auf dem Event-Bus:** `family_planner_event_created`,
+**Events on the event bus:** `family_planner_event_created`,
 `family_planner_event_updated`, `family_planner_event_deleted`,
 `family_planner_event_started`, `family_planner_event_ended`,
-`family_planner_reminder_due`. Jede Nutzlast enthält mindestens
-`event_id`, `title`, `start`, `end`, `all_day`, `person_ids` – bewusst
-ohne Beschreibung/Ort, um keine unnötigen Inhalte auf dem Event-Bus zu
-verteilen.
+`family_planner_reminder_due`. Every payload contains at least `event_id`,
+`title`, `start`, `end`, `all_day`, `person_ids` – deliberately without
+description/location, so as not to spread unnecessary content across the
+event bus.
 
-## Automationsbeispiele
+## Automation examples
 
-Vollständige, kopierfertige Beispiele stehen in
+Complete, copy-ready examples are in
 [`docs/automations.yaml`](docs/automations.yaml):
 
-1. Morgens 07:00 Uhr Zusammenfassung der heutigen Termine per
-   `family_planner.get_today_events` + Benachrichtigung.
-2. Erinnerung 30 Minuten vor einem Termin einer bestimmten Person über
+1. A 07:00 summary of today's events via
+   `family_planner.get_today_events` + a notification.
+2. A reminder 30 minutes before an event for a specific person, via
    `family_planner_reminder_due`.
-3. Reaktion auf neu erstellte/geänderte Termine (Logbuch-Eintrag).
-4. LED-Hinweis bei Terminstart (`family_planner_event_started`).
-5. Termin automatisch als erledigt markieren, wenn er endet
+3. Reacting to newly created/changed events (a logbook entry).
+4. An LED hint when an event starts (`family_planner_event_started`).
+5. Automatically marking an event done when it ends
    (`family_planner_event_ended` + `family_planner.set_event_status`).
 
-Template-Beispiele für Dashboard-Text (siehe auch
+Template examples for dashboard text (see also
 [`docs/dashboards.yaml`](docs/dashboards.yaml)):
 
 ```jinja2
@@ -353,7 +415,7 @@ Mia hat heute keine Termine.
 {% endif %}
 ```
 
-Alle Termine zwischen zwei Zeitpunkten abfragen (z. B. in einem Skript):
+Querying all events between two points in time (e.g. in a script):
 
 ```yaml
 - action: family_planner.get_events
@@ -363,143 +425,147 @@ Alle Termine zwischen zwei Zeitpunkten abfragen (z. B. in einem Skript):
   response_variable: woche
 ```
 
-## Dashboard-Zusatzkarten
+## Additional dashboard cards
 
-Statt eigener zusätzlicher Custom-Card-Typen liefert die Integration
-robuste Sensor-Attribute und Beispielkonfigurationen für native Karten
-(`markdown`, `tile`) – siehe [`docs/dashboards.yaml`](docs/dashboards.yaml)
-für „Heute“-Kachel, „Nächster Termin“-Kachel und Personenkachel.
+Rather than shipping extra custom card types of its own, the integration
+provides robust sensor attributes and example configurations for native
+cards (`markdown`, `tile`) – see
+[`docs/dashboards.yaml`](docs/dashboards.yaml) for a "Today" tile, a "Next
+event" tile and a per-person tile.
 
-## Backup, Import und Export
+## Backup, import and export
 
-Alle Daten liegen unter `<config>/.storage/family_planner_<entry_id>` und
-sind damit automatisch Teil jedes regulären Home-Assistant-Backups.
+All data lives under `<config>/.storage/family_planner_<entry_id>`, so
+it's automatically part of every regular Home Assistant backup.
 
-Zusätzlich bietet die Karte (Administrator) **JSON-Export** und
-**JSON-Import** über die Personenverwaltungs-/Einstellungsdialoge bzw.
-direkt über die WebSocket-Actions `family_planner/export_json` und
+In addition, the card (for administrators) offers **JSON export** and
+**JSON import** via the people-management/settings dialogs, or directly
+via the WebSocket actions `family_planner/export_json` and
 `family_planner/import_json`:
 
-- Export liefert Personen, Kategorien und Termine als ein JSON-Dokument.
-- Import validiert jeden Eintrag serverseitig; fehlerhafte Einträge werden
-  übersprungen und im Ergebnis aufgelistet, statt den gesamten Import
-  abzubrechen.
-- Bei einer Termin-ID, die bereits existiert, wählst du eine
-  Konfliktstrategie: **überspringen** (Standard), **ersetzen** oder
-  **duplizieren** (neue ID). Es wird nie stillschweigend überschrieben.
+- Export produces people, categories and events as a single JSON
+  document.
+- Import validates every entry server-side; invalid entries are skipped
+  and listed in the result instead of aborting the entire import.
+- If an event ID already exists, you choose a conflict strategy: **skip**
+  (default), **replace**, or **duplicate** (new ID). Nothing is ever
+  silently overwritten.
 
-**ICS-Import/-Export ist nicht Teil dieser Auslieferung** (siehe
-[Bekannte Einschränkungen](#bekannte-einschränkungen)).
+**ICS import/export is not part of this release** (see [Known
+limitations](#known-limitations)).
 
-## Datenschutz und Berechtigungen
+## Privacy and permissions
 
-- Keine externen Requests, kein Tracking, keine Telemetrie.
-- Alle WebSocket-Kommandos laufen über Home Assistants reguläre,
-  authentifizierte Verbindung – es gibt keinen zusätzlichen,
-  unauthentifizierten HTTP-Endpunkt.
-- **Lesen** (Termine, Personen, Kategorien abfragen): jeder angemeldete
-  Home-Assistant-Benutzer.
-- **Termine erstellen/bearbeiten/löschen**: standardmäßig auch
-  Nicht-Administratoren erlaubt; über die Integrationsoption
-  „Nicht-Administratoren dürfen Termine bearbeiten“ lässt sich das auf
-  Administratoren beschränken.
-- **Personen, Kategorien, Import/Export**: immer nur Administratoren.
-- Alle Eingaben werden serverseitig validiert (Titel/Beschreibung/Ort etc.
-  werden nie ungefiltert als HTML gerendert – die Karte nutzt Lit-Templates
-  mit automatischem Escaping, keine `innerHTML`-Injektion).
+- No external requests, no tracking, no telemetry.
+- All WebSocket commands run over Home Assistant's regular, authenticated
+  connection – there is no additional, unauthenticated HTTP endpoint.
+- **Reading** (querying events, people, categories): any signed-in Home
+  Assistant user.
+- **Creating/editing/deleting events**: allowed for non-administrators by
+  default; the integration option "Non-administrators may edit events" can
+  restrict this to administrators.
+- **People, categories, import/export**: administrators only, always.
+- All input is validated server-side (title/description/location etc. are
+  never rendered as unfiltered HTML – the card uses Lit templates with
+  automatic escaping, no `innerHTML` injection).
+- If the optional push notification via the Home Assistant app is enabled
+  (see [Reminders](#reminders)), the event title and a time reference
+  (e.g. "in 30 minutes") are sent via Home Assistant's own,
+  already-authenticated `notify` service call to the device configured for
+  that person – exactly the same mechanism any other Home Assistant
+  automation already uses to notify via the Companion App. No third-party
+  service is contacted.
 
-Home Assistant bietet für Custom Integrations aktuell keine feingranularere
-Berechtigungssteuerung als „Administrator ja/nein“ plus generelle
-Benutzeraktivität – eine Rollen-genaue Rechtevergabe (z. B. „Kind darf nur
-eigene Termine sehen“) ist damit **nicht** möglich und wird hier auch nicht
-vorgetäuscht.
+Home Assistant currently offers no finer-grained permission control for
+custom integrations than "administrator yes/no" plus general user
+activity – exact, role-based permissions (e.g. "a child may only see their
+own events") are therefore **not** possible, and this project does not
+pretend otherwise.
 
-## Diagnose
+## Diagnostics
 
-**Einstellungen → Geräte & Dienste → Family Planner → Diagnose
-herunterladen** liefert ausschließlich Metadaten: Integrationsversion,
-Schema-Version, Anzahl Personen/Kategorien/Termine, frühestes/spätestes
-Termindatum, letzter Speicherfehler, Migrationsstatus. **Keine**
-Termintitel, Beschreibungen, Orte oder Personennamen werden exportiert.
+**Settings → Devices & Services → Family Planner → Download diagnostics**
+provides only metadata: integration version, schema version, number of
+people/categories/events, earliest/latest event date, last storage error,
+migration status. **No** event titles, descriptions, locations or person
+names are exported.
 
-## Bekannte Einschränkungen
+## Known limitations
 
-- Kein Drag-and-drop zum Verschieben von Terminen (bewusst nicht
-  umgesetzt, siehe Aufgabenstellung: „nur dann implementieren, wenn es
-  zuverlässig funktioniert“ – für ein Wandtablet mit Touch-Bedienung ist
-  das Risiko unbeabsichtigter Verschiebungen ohne ausgiebige
-  Touch-Schwellenwert-Tests zu hoch).
-- Bearbeiten einer einzelnen Instanz einer Wiederholungsserie (nur Löschen
-  einer Instanz ist möglich; „diese und folgende“ ist nicht umgesetzt).
-- ICS-Import/-Export ist nicht enthalten (Phase 3).
-- Die Personen-Verwaltungs-Oberfläche in den Home-Assistant-
-  Integrationsoptionen (Options-Flow) ist bewusst einfach gehalten
-  (Formular statt Drag-and-drop-Liste) – die komfortable Verwaltung
-  erfolgt in der Karte selbst.
-- Keine feingranulare Rechteverwaltung über „Administrator“ hinaus (siehe
-  [Datenschutz und Berechtigungen](#datenschutz-und-berechtigungen)).
-- Sprachassistent-Integration („Welche Termine haben wir heute?“) ist nicht
-  Teil dieser Auslieferung; die dafür nötigen Bausteine (Services,
-  Sensoren) existieren aber bereits und können in einer eigenen
-  Assist-/Intent-Integration wiederverwendet werden.
+- No drag-and-drop for moving events (deliberately not implemented, per
+  the project brief: "only implement it if it works reliably" – for a
+  touch-operated wall tablet, the risk of accidental moves without
+  extensive touch-threshold testing is too high).
+- Editing a single instance of a recurring series (only deleting an
+  instance is possible; "this and following" is not implemented).
+- ICS import/export is not included (Phase 3).
+- The people-management UI inside Home Assistant's integration options
+  (the options flow) is deliberately kept simple (a form rather than a
+  drag-and-drop list) – the convenient management experience lives in the
+  card itself.
+- No fine-grained permission management beyond "administrator" (see
+  [Privacy and permissions](#privacy-and-permissions)).
+- Voice assistant integration ("What events do we have today?") is not
+  part of this release; the building blocks needed for it (services,
+  sensors) already exist and can be reused in a separate Assist/intent
+  integration.
 
-## Fehlerbehebung
+## Troubleshooting
 
-| Problem | Lösung |
+| Problem | Solution |
 | --- | --- |
-| Browser-Konsole zeigt `Uncaught (in promise) Error: Custom element not found: family-planner-card` | Die Karte wurde vom Browser nicht (mehr) geladen. Ursachen in der Reihenfolge ihrer Wahrscheinlichkeit: **(1)** Integration wurde vor dieser Version installiert/aktualisiert, als `http` noch nicht als `dependencies` in `manifest.json` deklariert war – Home Assistant vollständig neu starten (nicht nur die Integration neu laden), damit `hass.http` beim Setup garantiert schon bereitsteht. **(2)** Ein bereits offener Browser-Tab hat die Registrierung verpasst, weil `add_extra_js_url` nur beim (Neu-)Laden der Frontend-Startseite wirkt – Tab mit Hard-Refresh neu laden (Strg/Cmd+Shift+R) oder Dashboard neu öffnen. **(3)** `custom_components/family_planner/www/family-planner-card.js` fehlt oder ist beschädigt – Home-Assistant-Log nach `Family Planner` durchsuchen: eine WARNING-Zeile weist auf eine fehlende Datei hin, eine ERROR-Zeile (mit vollem Traceback) auf einen unerwarteten Fehler bei der Registrierung; in beiden Fällen laufen Backend/Sensoren/Kalender trotzdem normal weiter. Eine erfolgreiche Registrierung wird als INFO-Zeile mit der tatsächlich verwendeten URL geloggt. |
-| Karte erscheint nicht im Karten-Picker | Ressource manuell hinzufügen (siehe [Einrichtung](#einrichtung)); danach Browser-Cache leeren/Dashboard neu laden. |
-| Karte zeigt „Family Planner wird noch geladen…“ | Integration ist noch nicht vollständig gestartet; kurz warten. Bleibt der Zustand bestehen, Home-Assistant-Log auf Fehler beim Setup von `family_planner` prüfen. |
-| „Verbindung zu Home Assistant verloren“-Banner | Die Karte erkennt WebSocket-Verbindungsabbrüche automatisch und lädt Termine nach Wiederherstellung der Verbindung neu; keine Aktion nötig. |
-| Speichern schlägt fehl / Konfliktmeldung | Ein anderes Gerät hat denselben Termin zwischenzeitlich geändert (optimistische Sperrung anhand einer Versionsnummer). Termin neu laden und Änderung erneut vornehmen. |
-| „Diese Home-Assistant-Version ist älter als 2024.10.0“ im Log | Home Assistant aktualisieren; Backend/Sensoren funktionieren trotzdem, nur die automatische Karten-Registrierung entfällt. |
-| Import schlägt fehl | Fehlerliste im Ergebnis der Import-Aktion prüfen – fehlerhafte Einzeleinträge werden benannt, der Rest wird trotzdem importiert. |
+| Browser console shows `Uncaught (in promise) Error: Custom element not found: family-planner-card` | The card was not (or is no longer) loaded by the browser. Causes, in order of likelihood: **(1)** The integration was installed/updated before this version, when `http` wasn't yet declared as a `dependencies` entry in `manifest.json` – fully restart Home Assistant (not just reload the integration) so `hass.http` is guaranteed to be available by setup time. **(2)** An already-open browser tab missed the registration, because `add_extra_js_url` only takes effect when the frontend's start page (re)loads – hard-refresh the tab (Ctrl/Cmd+Shift+R) or reopen the dashboard. **(3)** `custom_components/family_planner/www/family-planner-card.js` is missing or corrupted – search the Home Assistant log for `Family Planner`: a WARNING line points to a missing file, an ERROR line (with a full traceback) to an unexpected registration failure; in both cases the backend/sensors/calendar keep working normally regardless. A successful registration is logged as an INFO line with the actually-used URL. |
+| The card doesn't show up in the card picker | Add the resource manually (see [Setup](#setup)); then clear the browser cache/reload the dashboard. |
+| The card shows "Family Planner is still loading…" | The integration hasn't finished starting up yet; wait a moment. If it persists, check the Home Assistant log for setup errors in `family_planner`. |
+| A "Connection to Home Assistant lost" banner | The card automatically detects WebSocket disconnects and reloads events once the connection is restored; no action needed. |
+| Saving fails / a conflict message appears | Another device changed the same event in the meantime (optimistic locking via a version number). Reload the event and make your change again. |
+| "This Home Assistant version is older than 2024.10.0" in the log | Update Home Assistant; the backend/sensors still work, only the automatic card registration is skipped. |
+| Import fails | Check the error list in the import action's result – individual invalid entries are named, and the rest is still imported. |
 
-## Upgrade- und Migrationshinweise
+## Upgrade and migration notes
 
-Das Speicherformat ist versioniert (`STORAGE_VERSION_MAJOR` /
-`STORAGE_VERSION_MINOR` in `const.py`). Zukünftige Datenmodelländerungen
-werden über `FamilyPlannerStore._async_migrate_func`
-(`storage.py`) migriert; ein Versionssprung auf eine **neuere** Major-
-Version, als die installierte Integration kennt, wird kontrolliert
-abgelehnt statt Daten stillschweigend zu beschädigen. Vor größeren
-Updates empfiehlt sich wie immer ein reguläres Home-Assistant-Backup.
+The storage format is versioned (`STORAGE_VERSION_MAJOR` /
+`STORAGE_VERSION_MINOR` in `const.py`). Future data-model changes are
+migrated via `FamilyPlannerStore._async_migrate_func` (`storage.py`); a
+version jump to a **newer** major version than the installed integration
+understands is refused in a controlled way, instead of silently
+corrupting data. As always, a regular Home Assistant backup is recommended
+before major updates.
 
-## Entwicklung
+## Development
 
-### Vor der Veröffentlichung
+### Before publishing
 
-`custom_components/family_planner/manifest.json` enthält Platzhalter
-(`@your-github-username`, `github.com/your-github-username/...`) für
-`codeowners`, `documentation` und `issue_tracker`. Vor der Veröffentlichung
-(insb. vor der Einreichung bei HACS) auf das tatsächliche Repository
-anpassen. Für ein offizielles Icon im HACS-Store wäre zusätzlich ein Pull
-Request an [home-assistant/brands](https://github.com/home-assistant/brands)
-nötig – für die private Nutzung als benutzerdefiniertes HACS-Repository ist
-das nicht erforderlich.
+`custom_components/family_planner/manifest.json`'s `codeowners`,
+`documentation` and `issue_tracker` already point at the real repository
+(`iiNoNoNoii/HomeRoster`). `.github/workflows/` runs HACS/hassfest
+validation and the backend test suite on every push and pull request. An
+official icon in the HACS store would additionally require a pull request
+to [home-assistant/brands](https://github.com/home-assistant/brands) –
+that's not required for private use as a custom HACS repository.
 
-### Repository-Struktur
+### Repository structure
 
 ```text
 family-planner/
 ├── custom_components/family_planner/   # Backend (Python)
-│   ├── www/family-planner-card.js      # vorgebaute Karte (siehe unten)
+│   ├── www/family-planner-card.js      # Pre-built card (see below)
 │   └── ...
-├── frontend/                           # Frontend-Quellcode (TypeScript/Lit)
-├── tests/backend/                      # pytest (Backend)
-├── frontend/tests/                     # vitest (Frontend)
-├── docs/                               # Beispiel-Automationen/-Dashboards
+├── frontend/                           # Frontend source (TypeScript/Lit)
+├── tests/backend/                      # pytest (backend)
+├── frontend/tests/                     # vitest (frontend)
+├── docs/                               # Example automations/dashboards
 ├── hacs.json, LICENSE, pyproject.toml
 ```
 
-**Abweichung von der ursprünglich skizzierten Struktur:** Die
-Frontend-Tests liegen unter `frontend/tests/` statt in einem
-sprachübergreifenden `tests/`-Ordner, weil Vitest/TypeScript-Tooling
-(Konfiguration, `tsconfig.json`) sich auf das `frontend/`-Package bezieht;
-Backend-Tests liegen weiterhin im Repository-Root unter `tests/backend/`,
-wie es für pytest/Home-Assistant-Custom-Component-Tests üblich ist.
+**Deviation from the originally sketched structure:** the frontend tests
+live under `frontend/tests/` instead of a shared cross-language `tests/`
+folder, because the Vitest/TypeScript tooling (config, `tsconfig.json`)
+applies to the `frontend/` package; backend tests remain at the repository
+root under `tests/backend/`, as is customary for pytest/Home Assistant
+custom-component tests.
 
-### Frontend bauen
+### Building the frontend
 
 ```bash
 cd frontend
@@ -507,28 +573,28 @@ npm install
 npm run build      # -> frontend/dist/family-planner-card.js
 ```
 
-Nach jeder Änderung muss die gebaute Datei zusätzlich nach
-`custom_components/family_planner/www/family-planner-card.js` kopiert
-werden (im Repository ist bereits ein aktueller Build enthalten):
+After every change, the built file also needs to be copied to
+`custom_components/family_planner/www/family-planner-card.js` (the
+repository already includes an up-to-date build):
 
 ```bash
 cp frontend/dist/family-planner-card.js custom_components/family_planner/www/
 ```
 
-`npm run watch` baut bei Änderungen automatisch neu (unminifiziert, mit
-Sourcemap) für die lokale Entwicklung gegen eine laufende Home-Assistant-
-Instanz.
+`npm run watch` automatically rebuilds on changes (unminified, with a
+source map) for local development against a running Home Assistant
+instance.
 
-### Frontend-Tests, Typcheck, Lint
+### Frontend tests, type checking, linting
 
 ```bash
 cd frontend
 npm run typecheck   # tsc --noEmit
-npm test            # vitest (Lane-Berechnung, Validierung, Filter, Datum/DST)
+npm test            # vitest (lane layout, validation, filters, date/DST)
 npm run lint         # eslint
 ```
 
-### Backend-Tests
+### Backend tests
 
 ```bash
 python -m venv .venv
@@ -540,88 +606,85 @@ pytest tests/backend -q
 (`tzdata` is only required on platforms without a system IANA timezone
 database, e.g. Windows.)
 
-Die Tests laufen mit [`pytest-homeassistant-custom-component`](https://github.com/MatthewFlamm/pytest-homeassistant-custom-component)
-gegen einen echten (Test-)Home-Assistant-Kern und decken ab: Migration,
-CRUD, Zeitzonen/DST, überlappende Termine, mehrere Personen pro Termin,
-Neustart/Persistenz, Kalenderabfragen, Sensorzustände sowie Berechtigungen
-und Validierung über die echte WebSocket-API (`hass_ws_client`).
+Tests run with
+[`pytest-homeassistant-custom-component`](https://github.com/MatthewFlamm/pytest-homeassistant-custom-component)
+against a real (test) Home Assistant core, and cover: migration, CRUD,
+timezones/DST, overlapping events, multiple people per event,
+restart/persistence, calendar queries, sensor states, and permissions and
+validation via the real WebSocket API (`hass_ws_client`).
 
-> **Hinweis zur PyPI-Version von `pytest-homeassistant-custom-component`:**
-> Das zum Entwicklungszeitpunkt auf PyPI verfügbare Release pinnt
-> `homeassistant==2023.7.3` – älter als das für diese Integration
-> dokumentierte `min_ha_version: 2024.10.0`. Der Code selbst nutzt
-> durchgehend die für 2024.10+ dokumentierten, echten APIs; an drei Stellen
-> (`ServiceValidationError`, `DeviceInfo`-Importpfad,
-> `CalendarEvent.status`) gibt es einen minimalen, klar kommentierten
-> Kompatibilitäts-Fallback, damit sich das Backend auch mit diesem älteren
-> Testkern vollständig testen lässt, ohne das Verhalten auf unterstützten
-> Home-Assistant-Versionen zu verändern. Wer gegen eine aktuellere
-> `homeassistant`-Version testet (z. B. `pip install
-> "git+https://github.com/MatthewFlamm/pytest-homeassistant-custom-component.git"`),
-> bekommt exakt dieselben Testergebnisse.
+> **Note on the PyPI release of `pytest-homeassistant-custom-component`:**
+> The release available on PyPI at the time of development pins
+> `homeassistant==2023.7.3` – older than this integration's documented
+> `min_ha_version: 2024.10.0`. The code itself consistently uses the real
+> APIs documented for 2024.10+; in three places (`ServiceValidationError`,
+> the `DeviceInfo` import path, `CalendarEvent.status`) there's a minimal,
+> clearly commented compatibility fallback so the backend can be fully
+> tested against this older test core, without changing behavior on
+> supported Home Assistant versions. Testing against a newer
+> `homeassistant` version (e.g. `pip install
+> "git+https://github.com/MatthewFlamm/pytest-homeassistant-custom-component.git"`)
+> yields exactly the same test results.
 
-Backend-Qualität: vollständige Typannotationen, `ruff` für Linting/
-Formatierung (`ruff check custom_components/family_planner tests/backend`,
-`ruff format ...`), ausschließlich asynchroner, nicht-blockierender Code
-gemäß Home-Assistant-Konventionen.
+Backend quality: full type annotations, `ruff` for linting/formatting
+(`ruff check custom_components/family_planner tests/backend`,
+`ruff format ...`), exclusively async, non-blocking code per Home
+Assistant conventions.
 
-## Abnahmekriterien (MVP)
+## Acceptance criteria (MVP)
 
-- [x] Integration lässt sich über die Home-Assistant-Oberfläche einrichten.
-- [x] Drei Familienpersonen lassen sich lokal anlegen.
-- [x] Die Custom Card lässt sich einem Dashboard hinzufügen.
-- [x] Ein Termin kann über die Plus-Schaltfläche erstellt werden.
-- [x] Titel, Datum, Start, Ende und mehrere Personen werden gespeichert.
-- [x] Der Termin bleibt nach einem Neustart erhalten (siehe Restart-Tests).
-- [x] Der Termin erscheint in der Gesamtansicht.
-- [x] Der Termin erscheint in den gefilterten Ansichten aller zugewiesenen
-      Personen.
-- [x] Zwei zeitlich überlappende Termine können gespeichert werden.
-- [x] Überlappende Termine werden sichtbar nebeneinander dargestellt
-      (Lane-Layout, mit Unit-Tests abgesichert).
-- [x] Ein Termin lässt sich öffnen, bearbeiten und löschen.
-- [x] Ganztägige und mehrtägige Termine funktionieren korrekt
-      (DST-sicher, siehe Tests).
-- [x] `calendar.family_planner` ist für Home-Assistant-Automationen
-      nutzbar.
-- [x] Der nächste Termin ist über eine Entity oder Action abrufbar.
-- [x] Die heutigen Termine sind über eine Entity oder Action abrufbar.
-- [x] Eine andere Dashboard-Karte kann den nächsten Termin anzeigen
-      (siehe `docs/dashboards.yaml`).
-- [x] Die Lösung benötigt im normalen Betrieb keine Internetverbindung.
-- [x] Deutsche Übersetzungen sind vorhanden (Backend `strings.json`/
-      `translations/de.json`, Frontend `utils/localize.ts`).
-- [x] Dark Mode und mobile Darstellung sind nutzbar (HA-CSS-Variablen,
-      responsives CSS, `prefers-reduced-motion`).
-- [x] Backend- und zentrale Frontend-Tests laufen erfolgreich durch
-      (102 Backend-Tests, 33 Frontend-Tests).
+- [x] The integration can be set up via the Home Assistant UI.
+- [x] Three family members can be created locally.
+- [x] The custom card can be added to a dashboard.
+- [x] An event can be created via the add ("+") button.
+- [x] Title, date, start, end and multiple people are saved.
+- [x] The event survives a restart (see restart tests).
+- [x] The event appears in the overall view.
+- [x] The event appears in the filtered views of all assigned people.
+- [x] Two time-overlapping events can be saved.
+- [x] Overlapping events are visibly shown side by side (lane layout,
+      covered by unit tests).
+- [x] An event can be opened, edited and deleted.
+- [x] All-day and multi-day events work correctly (DST-safe, see tests).
+- [x] `calendar.family_planner` can be used in Home Assistant automations.
+- [x] The next event can be retrieved via an entity or an action.
+- [x] Today's events can be retrieved via an entity or an action.
+- [x] Another dashboard card can display the next event (see
+      `docs/dashboards.yaml`).
+- [x] The solution needs no internet connection during normal operation.
+- [x] German translations are present (backend `strings.json`/
+      `translations/de.json`, frontend `utils/localize.ts`).
+- [x] Dark mode and mobile layout are usable (HA CSS variables, responsive
+      CSS, `prefers-reduced-motion`).
+- [x] Backend and core frontend tests pass (102 backend tests, 33 frontend
+      tests).
 
-## Entwicklungsphasen
+## Development phases
 
-**Phase 1 (MVP) – vollständig umgesetzt:** lokale Speicherung,
-Personenverwaltung, Termin-CRUD, mehrere Personen pro Termin, Tag-/Woche-/
-Monat-/Agenda-Ansicht, Überlappungsdarstellung, Gesamt- und
-Personenkalender, Heute-/Nächster-Termin-Hooks, deutsche/englische UI,
-Tests und Dokumentation.
+**Phase 1 (MVP) – fully implemented:** local storage, people management,
+event CRUD, multiple people per event, day/week/month/agenda views,
+overlap layout, overall and per-person calendars, today/next-event hooks,
+German/English UI, tests and documentation.
 
-**Phase 2 (Komfort) – umgesetzt:** Kategorien, Erinnerungs-Offsets,
-Duplizieren, Status, Suche, Personen-/Kategorienfilter, JSON-Import/-
-Export, Zusatzkarten-Beispiele, visueller Karteneditor. **Nicht umgesetzt:**
-Drag-and-drop (siehe [Bekannte Einschränkungen](#bekannte-einschränkungen)).
+**Phase 2 (convenience) – implemented:** categories, reminder offsets,
+duplication, status, search, person/category filters, JSON import/export,
+additional-card examples, the visual card editor, a pinned card language,
+and push notifications via the Home Assistant app as an optional addition
+to the reminder event. **Not implemented:** drag-and-drop (see [Known
+limitations](#known-limitations)).
 
-**Phase 3 (erweitert) – teilweise umgesetzt:** einfache
-Wiederholungsregeln (täglich/wöchentlich/monatlich/jährlich, Löschen
-einzelner Instanzen) sind vorhanden; **nicht umgesetzt:** Bearbeiten
-einzelner Serieninstanzen, ICS-Interoperabilität, feinere Berechtigungen
-über Administrator/Nutzer hinaus, Sprachassistent-Integration, erweiterte
-Kiosk-Funktionen über den bereits vorhandenen `read_only`-Modus hinaus.
-Geburtstage sind über die Kategorie „Geburtstag“ und den dedizierten
-`sensor.family_planner_next_birthday` bereits nutzbar.
+**Phase 3 (extended) – partially implemented:** simple recurrence rules
+(daily/weekly/monthly/yearly, deleting single instances) are present;
+**not implemented:** editing single series instances, ICS interoperability,
+finer-grained permissions beyond administrator/user, voice assistant
+integration, kiosk features beyond the existing `read_only` mode.
+Birthdays are already usable via the "Birthday" category and the dedicated
+`sensor.family_planner_next_birthday`.
 
-## Lizenz
+## License
 
-GNU Affero General Public License v3.0 (AGPL-3.0), siehe [LICENSE](LICENSE).
-Wird eine modifizierte Version über ein Netzwerk (z. B. als Teil einer
-Home-Assistant-Instanz) bereitgestellt, muss der Quellcode dieser
-modifizierten Version den Nutzern zugänglich gemacht werden (siehe
-Abschnitt 13 der Lizenz).
+GNU Affero General Public License v3.0 (AGPL-3.0), see
+[LICENSE](LICENSE). If a modified version is made available over a network
+(e.g. as part of a Home Assistant instance), the source code of that
+modified version must be made available to its users (see section 13 of
+the license).

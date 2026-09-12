@@ -4,7 +4,7 @@ import { customElement, property, state } from "lit/decorators.js";
 import "./dialog-shell";
 import { resolveEventColor } from "../utils/colors";
 import { formatTime } from "../utils/datetime";
-import { t } from "../utils/localize";
+import { resolveLanguage, t } from "../utils/localize";
 import type { HomeAssistant } from "../ha-types";
 import type { Category, FamilyEvent, Person } from "../types";
 
@@ -91,6 +91,9 @@ export class FamilyPlannerEventDetailDialog extends LitElement {
   static styles = STYLES;
 
   @property({ attribute: false }) hass!: HomeAssistant;
+  // See event-dialog.ts's `language` property for the "auto" vs explicit
+  // override contract.
+  @property({ type: String }) language = "auto";
   @property({ attribute: false }) people: Person[] = [];
   @property({ attribute: false }) categories: Category[] = [];
   @property({ attribute: false }) event!: FamilyEvent;
@@ -103,7 +106,7 @@ export class FamilyPlannerEventDetailDialog extends LitElement {
   }
 
   protected render(): TemplateResult {
-    const lang = this.hass?.language;
+    const lang = resolveLanguage(this.language, this.hass?.language ?? "auto");
     const event = this.event;
     const color = resolveEventColor(event, this.people, this.categories, "person");
     const persons = event.person_ids.map((id) => this.people.find((p) => p.id === id)).filter(Boolean) as Person[];

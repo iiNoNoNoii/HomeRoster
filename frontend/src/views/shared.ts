@@ -66,7 +66,7 @@ export function renderEventChip(ctx: ViewContext, event: FamilyEvent, options?: 
         ? html`<span class="fp-chip-time">${eventTimeLabel(event, ctx.use24h)}</span>`
         : nothing}
       <span class="fp-chip-title">${event.title}</span>
-      ${persons.length > 1 ? renderPersonDots(persons, 3, ctx.hass.language) : nothing}
+      ${persons.length > 1 ? renderPersonDots(persons, 3, ctx.language) : nothing}
     </button>
   `;
 }
@@ -91,14 +91,14 @@ export function renderEventListItem(ctx: ViewContext, event: FamilyEvent): Templ
     >
       <span class="fp-agenda-item-bar" style="background:${color}"></span>
       <span class="fp-agenda-item-time"
-        >${event.all_day ? t(ctx.hass.language, "event.all_day") : eventTimeLabel(event, ctx.use24h)}</span
+        >${event.all_day ? t(ctx.language, "event.all_day") : eventTimeLabel(event, ctx.use24h)}</span
       >
       <span class="fp-agenda-item-title">${event.title}</span>
       ${event.location
         ? html`<span class="fp-agenda-item-location"><ha-icon icon="mdi:map-marker"></ha-icon>${event.location}</span>`
         : nothing}
-      ${event.status ? html`<span class="fp-agenda-item-status">${statusLabel(event.status, ctx.hass.language)}</span>` : nothing}
-      ${renderPersonDots(persons, 4, ctx.hass.language)}
+      ${event.status ? html`<span class="fp-agenda-item-status">${statusLabel(event.status, ctx.language)}</span>` : nothing}
+      ${renderPersonDots(persons, 4, ctx.language)}
     </button>
   `;
 }
@@ -112,7 +112,7 @@ function renderDayGroup(ctx: ViewContext, day: Date, events: FamilyEvent[]): Tem
   return html`
     <div class="fp-agenda-group">
       <div class="fp-agenda-daylabel ${isSameDay(day, ctx.now) ? "fp-today" : ""}">
-        ${t(ctx.hass.language, `weekday.short.${day.getDay()}`)} ${day.getDate()}.${day.getMonth() + 1}.
+        ${t(ctx.language, `weekday.short.${day.getDay()}`)} ${day.getDate()}.${day.getMonth() + 1}.
       </div>
       <div class="fp-agenda-items">${events.map((event) => renderEventListItem(ctx, event))}</div>
     </div>
@@ -133,7 +133,7 @@ export function renderFilteredEventList(ctx: ViewContext): TemplateResult {
     return html`
       <div class="fp-empty-state">
         <ha-icon icon="mdi:calendar-search-outline"></ha-icon>
-        <div class="fp-empty-title">${t(ctx.hass.language, "empty.no_matches")}</div>
+        <div class="fp-empty-title">${t(ctx.language, "empty.no_matches")}</div>
       </div>
     `;
   }

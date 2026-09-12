@@ -18,8 +18,8 @@ export function renderAgendaView(ctx: ViewContext): TemplateResult {
     return html`
       <div class="fp-empty-state">
         <ha-icon icon="mdi:calendar-blank-outline"></ha-icon>
-        <div class="fp-empty-title">${t(ctx.hass.language, "empty.no_events")}</div>
-        <div class="fp-empty-hint">${t(ctx.hass.language, "empty.no_events_hint")}</div>
+        <div class="fp-empty-title">${t(ctx.language, "empty.no_events")}</div>
+        <div class="fp-empty-hint">${t(ctx.language, "empty.no_events_hint")}</div>
       </div>
     `;
   }
@@ -30,7 +30,7 @@ export function renderAgendaView(ctx: ViewContext): TemplateResult {
         (group) => html`
           <div class="fp-agenda-group">
             <div class="fp-agenda-daylabel ${isSameDay(group.day, ctx.now) ? "fp-today" : ""}">
-              ${t(ctx.hass.language, `weekday.short.${group.day.getDay()}`)} ${group.day.getDate()}.${group.day.getMonth() + 1}.
+              ${t(ctx.language, `weekday.short.${group.day.getDay()}`)} ${group.day.getDate()}.${group.day.getMonth() + 1}.
             </div>
             <div class="fp-agenda-items">${group.events.map((event) => renderEventListItem(ctx, event))}</div>
           </div>
