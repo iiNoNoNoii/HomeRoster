@@ -1,0 +1,117 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Family Planner einrichten",
+        "description": "Family Planner ist ein vollständig lokaler Familienkalender ohne Cloud-Dienst. Alle Daten werden ausschließlich in Home Assistant gespeichert. Klicke auf Absenden, um fortzufahren."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Family Planner ist bereits eingerichtet. Es wird nur eine Instanz unterstützt."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Family Planner - Einstellungen",
+        "menu_options": {
+          "settings": "Allgemeine Einstellungen",
+          "people": "Personen verwalten",
+          "categories": "Kategorien verwalten"
+        }
+      },
+      "settings": {
+        "title": "Allgemeine Einstellungen",
+        "data": {
+          "require_person": "Mindestens eine Person pro Termin erforderlich",
+          "enable_categories": "Kategorien aktivieren",
+          "enable_status": "Terminstatus aktivieren",
+          "allow_non_admin_write": "Nicht-Administratoren dürfen Termine bearbeiten",
+          "first_weekday": "Erster Wochentag",
+          "today_sensor_limit": "Max. Termine in Sensor-Attributen",
+          "reminder_tick_seconds": "Prüfintervall für Erinnerungen (Sekunden)"
+        }
+      },
+      "people": {
+        "title": "Personen verwalten",
+        "description": "Aktuelle Personen: {people_list}",
+        "data": {
+          "action": "Aktion",
+          "person_id": "Person",
+          "name": "Name (bei Hinzufügen/Bearbeiten)",
+          "color": "Farbe, z. B. #3f51b5 (bei Hinzufügen/Bearbeiten)",
+          "role": "Rolle (bei Hinzufügen/Bearbeiten)"
+        }
+      },
+      "people_delete_confirm": {
+        "title": "Person löschen",
+        "description": "Wie soll mit bestehenden Terminen von {person_name} verfahren werden? Es gehen dabei niemals Termine verloren.",
+        "data": {
+          "strategy": "Strategie",
+          "reassign_to": "Neu zuweisen an (nur bei Strategie 'Neu zuweisen')"
+        }
+      },
+      "categories": {
+        "title": "Kategorien verwalten",
+        "description": "Aktuelle Kategorien: {categories_list}",
+        "data": {
+          "action": "Aktion",
+          "category_id": "Kategorie",
+          "name": "Name (bei Hinzufügen/Bearbeiten)",
+          "color": "Farbe, z. B. #9e9e9e (bei Hinzufügen/Bearbeiten)"
+        }
+      }
+    },
+    "error": {
+      "invalid_person": "Ungültige Eingabe. Bitte Namen bzw. Auswahl prüfen.",
+      "invalid_category": "Ungültige Eingabe. Bitte Namen bzw. Auswahl prüfen.",
+      "reassign_target_required": "Bitte eine Zielperson für die Neuzuweisung auswählen."
+    },
+    "abort": {
+      "not_loaded": "Family Planner ist noch nicht vollständig geladen. Bitte kurz warten und erneut versuchen."
+    }
+  },
+  "selector": {
+    "people_action": {
+      "options": {
+        "add": "Hinzufügen",
+        "edit": "Bearbeiten",
+        "delete": "Löschen",
+        "move_up": "Nach oben verschieben",
+        "move_down": "Nach unten verschieben",
+        "done": "Fertig / Zurück"
+      }
+    },
+    "category_action": {
+      "options": {
+        "add": "Hinzufügen",
+        "edit": "Bearbeiten",
+        "delete": "Löschen",
+        "move_up": "Nach oben verschieben",
+        "move_down": "Nach unten verschieben",
+        "done": "Fertig / Zurück"
+      }
+    },
+    "person_role": {
+      "options": {
+        "parent": "Elternteil",
+        "child": "Kind",
+        "other": "Sonstige Person"
+      }
+    },
+    "delete_strategy": {
+      "options": {
+        "deactivate": "Nur deaktivieren (Termine bleiben unverändert)",
+        "remove_from_events": "Aus allen Terminen entfernen",
+        "reassign": "Termine einer anderen Person zuweisen",
+        "keep_unassigned": "Termine ohne Personenzuweisung behalten"
+      }
+    },
+    "first_weekday": {
+      "options": {
+        "monday": "Montag",
+        "sunday": "Sonntag"
+      }
+    }
+  }
+}

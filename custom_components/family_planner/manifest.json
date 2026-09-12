@@ -1,0 +1,15 @@
+{
+  "domain": "family_planner",
+  "name": "Family Planner",
+  "codeowners": ["@your-github-username"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/your-github-username/family-planner",
+  "issue_tracker": "https://github.com/your-github-username/family-planner/issues",
+  "integration_type": "hub",
+  "iot_class": "local_push",
+  "requirements": ["python-dateutil>=2.8.2"],
+  "single_config_entry": true,
+  "version": "1.0.0",
+  "min_ha_version": "2024.10.0"
+}

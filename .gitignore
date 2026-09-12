@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/dist_ts_check/
+*.log
+
+# Home Assistant test artifacts
+tests/backend/**/__pycache__/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

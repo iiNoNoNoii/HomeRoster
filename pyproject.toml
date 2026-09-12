@@ -1,0 +1,14 @@
+[tool.pytest.ini_options]
+testpaths = ["tests/backend"]
+asyncio_mode = "auto"
+norecursedirs = [".venv", "frontend", "node_modules", "dist"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "ASYNC"]
+# UP017 (datetime.UTC alias, Python 3.11+) is disabled: harmless either way,
+# and some contributors' local dev interpreters may still be 3.10.
+ignore = ["UP017"]

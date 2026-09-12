@@ -1,0 +1,266 @@
+create_event:
+  name: Termin erstellen
+  description: Erstellt einen neuen Familientermin.
+  fields:
+    title:
+      name: Titel
+      description: Titel des Termins.
+      required: true
+      example: Zahnarzt
+      selector:
+        text:
+    subtitle:
+      name: Untertitel
+      description: Optionaler Untertitel.
+      selector:
+        text:
+    start:
+      name: Start
+      description: Start als ISO-8601-Zeitstempel (z. B. 2026-09-20T14:30:00+02:00) oder Datum (YYYY-MM-DD) bei ganztägigen Terminen.
+      required: true
+      example: "2026-09-20T14:30:00+02:00"
+      selector:
+        text:
+    end:
+      name: Ende
+      description: Ende als ISO-8601-Zeitstempel oder Datum. Bei ganztägigen Terminen ist das Enddatum exklusiv (Tag danach).
+      required: true
+      example: "2026-09-20T15:00:00+02:00"
+      selector:
+        text:
+    all_day:
+      name: Ganztägig
+      description: Termin als ganztägig kennzeichnen.
+      default: false
+      selector:
+        boolean:
+    person_ids:
+      name: Personen
+      description: IDs der zugewiesenen Personen (siehe family_planner.get_events oder Personenverwaltung).
+      selector:
+        text:
+          multiple: true
+    description:
+      name: Beschreibung
+      selector:
+        text:
+          multiline: true
+    location:
+      name: Ort
+      selector:
+        text:
+    category_id:
+      name: Kategorie
+      description: ID einer konfigurierten Kategorie.
+      selector:
+        text:
+    color:
+      name: Farbe
+      description: Hex-Farbwert, überschreibt die abgeleitete Personen-/Kategoriefarbe.
+      selector:
+        text:
+    icon:
+      name: Symbol
+      description: MDI-Icon, z. B. mdi:tooth.
+      selector:
+        icon:
+    status:
+      name: Status
+      selector:
+        select:
+          options:
+            - planned
+            - confirmed
+            - tentative
+            - done
+            - cancelled
+    reminders:
+      name: Erinnerungen
+      description: Liste von Minuten-Offsets vor dem Start, z. B. [15, 60].
+      selector:
+        object:
+    rrule:
+      name: Wiederholungsregel
+      description: RFC5545-RRULE, z. B. FREQ=WEEKLY;BYDAY=MO,WE. Unterstützt DAILY/WEEKLY/MONTHLY/YEARLY.
+      selector:
+        text:
+
+update_event:
+  name: Termin aktualisieren
+  description: Aktualisiert einen bestehenden Termin (nur angegebene Felder werden geändert).
+  fields:
+    event_id:
+      name: Termin-ID
+      required: true
+      selector:
+        text:
+    expected_version:
+      name: Erwartete Version
+      description: Optionale Versionsnummer für optimistische Sperrung; bei Konflikt schlägt der Aufruf fehl.
+      selector:
+        number:
+          min: 1
+          mode: box
+    title:
+      name: Titel
+      selector:
+        text:
+    start:
+      name: Start
+      selector:
+        text:
+    end:
+      name: Ende
+      selector:
+        text:
+    all_day:
+      name: Ganztägig
+      selector:
+        boolean:
+    person_ids:
+      name: Personen
+      selector:
+        text:
+          multiple: true
+    description:
+      name: Beschreibung
+      selector:
+        text:
+          multiline: true
+    location:
+      name: Ort
+      selector:
+        text:
+    category_id:
+      name: Kategorie
+      selector:
+        text:
+    color:
+      name: Farbe
+      selector:
+        text:
+    icon:
+      name: Symbol
+      selector:
+        icon:
+    status:
+      name: Status
+      selector:
+        select:
+          options:
+            - planned
+            - confirmed
+            - tentative
+            - done
+            - cancelled
+    reminders:
+      name: Erinnerungen
+      selector:
+        object:
+    rrule:
+      name: Wiederholungsregel
+      selector:
+        text:
+
+delete_event:
+  name: Termin löschen
+  description: Löscht einen Termin oder eine einzelne Instanz einer Serie.
+  fields:
+    event_id:
+      name: Termin-ID
+      required: true
+      selector:
+        text:
+    mode:
+      name: Modus
+      description: "'series' löscht den gesamten Termin/die Serie, 'instance' storniert nur eine Instanz."
+      default: series
+      selector:
+        select:
+          options:
+            - series
+            - instance
+    occurrence_start:
+      name: Instanz-Start
+      description: Bei mode=instance der ISO-Zeitstempel der zu stornierenden Instanz.
+      selector:
+        text:
+
+get_events:
+  name: Termine abfragen
+  description: Liefert alle Termine (inkl. expandierter Wiederholungen) in einem Zeitraum zurück.
+  fields:
+    start:
+      name: Start
+      required: true
+      selector:
+        text:
+    end:
+      name: Ende
+      required: true
+      selector:
+        text:
+    person_ids:
+      name: Personen-Filter
+      selector:
+        text:
+          multiple: true
+
+get_today_events:
+  name: Heutige Termine abfragen
+  description: Liefert alle Termine des heutigen Tages zurück.
+  fields:
+    person_id:
+      name: Person
+      description: Optional auf eine Person filtern.
+      selector:
+        text:
+
+get_next_event:
+  name: Nächsten Termin abfragen
+  description: Liefert den nächsten anstehenden (oder laufenden) Termin zurück.
+  fields:
+    person_id:
+      name: Person
+      description: Optional auf eine Person filtern.
+      selector:
+        text:
+
+duplicate_event:
+  name: Termin duplizieren
+  description: Dupliziert einen bestehenden Termin, optional mit neuem Start/Ende.
+  fields:
+    event_id:
+      name: Termin-ID
+      required: true
+      selector:
+        text:
+    start:
+      name: Neuer Start
+      selector:
+        text:
+    end:
+      name: Neues Ende
+      selector:
+        text:
+
+set_event_status:
+  name: Terminstatus setzen
+  description: Setzt den Status eines Termins (z. B. erledigt oder abgesagt).
+  fields:
+    event_id:
+      name: Termin-ID
+      required: true
+      selector:
+        text:
+    status:
+      name: Status
+      required: true
+      selector:
+        select:
+          options:
+            - planned
+            - confirmed
+            - tentative
+            - done
+            - cancelled

@@ -1,0 +1,117 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up Family Planner",
+        "description": "Family Planner is a fully local family calendar with no cloud service. All data stays inside Home Assistant. Click Submit to continue."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Family Planner is already set up. Only one instance is supported."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Family Planner - Settings",
+        "menu_options": {
+          "settings": "General settings",
+          "people": "Manage people",
+          "categories": "Manage categories"
+        }
+      },
+      "settings": {
+        "title": "General settings",
+        "data": {
+          "require_person": "Require at least one person per event",
+          "enable_categories": "Enable categories",
+          "enable_status": "Enable event status",
+          "allow_non_admin_write": "Allow non-admins to edit events",
+          "first_weekday": "First day of the week",
+          "today_sensor_limit": "Max. events in sensor attributes",
+          "reminder_tick_seconds": "Reminder check interval (seconds)"
+        }
+      },
+      "people": {
+        "title": "Manage people",
+        "description": "Current people: {people_list}",
+        "data": {
+          "action": "Action",
+          "person_id": "Person",
+          "name": "Name (for add/edit)",
+          "color": "Color, e.g. #3f51b5 (for add/edit)",
+          "role": "Role (for add/edit)"
+        }
+      },
+      "people_delete_confirm": {
+        "title": "Delete person",
+        "description": "What should happen to existing events for {person_name}? No events are ever lost.",
+        "data": {
+          "strategy": "Strategy",
+          "reassign_to": "Reassign to (only for 'Reassign' strategy)"
+        }
+      },
+      "categories": {
+        "title": "Manage categories",
+        "description": "Current categories: {categories_list}",
+        "data": {
+          "action": "Action",
+          "category_id": "Category",
+          "name": "Name (for add/edit)",
+          "color": "Color, e.g. #9e9e9e (for add/edit)"
+        }
+      }
+    },
+    "error": {
+      "invalid_person": "Invalid input. Please check the name/selection.",
+      "invalid_category": "Invalid input. Please check the name/selection.",
+      "reassign_target_required": "Please select a target person for reassignment."
+    },
+    "abort": {
+      "not_loaded": "Family Planner is not fully loaded yet. Please wait a moment and try again."
+    }
+  },
+  "selector": {
+    "people_action": {
+      "options": {
+        "add": "Add",
+        "edit": "Edit",
+        "delete": "Delete",
+        "move_up": "Move up",
+        "move_down": "Move down",
+        "done": "Done / Back"
+      }
+    },
+    "category_action": {
+      "options": {
+        "add": "Add",
+        "edit": "Edit",
+        "delete": "Delete",
+        "move_up": "Move up",
+        "move_down": "Move down",
+        "done": "Done / Back"
+      }
+    },
+    "person_role": {
+      "options": {
+        "parent": "Parent",
+        "child": "Child",
+        "other": "Other person"
+      }
+    },
+    "delete_strategy": {
+      "options": {
+        "deactivate": "Deactivate only (events unchanged)",
+        "remove_from_events": "Remove from all events",
+        "reassign": "Reassign events to another person",
+        "keep_unassigned": "Keep events without a person assigned"
+      }
+    },
+    "first_weekday": {
+      "options": {
+        "monday": "Monday",
+        "sunday": "Sunday"
+      }
+    }
+  }
+}
