@@ -28,5 +28,5 @@ jobs:
       - name: Lint (ruff)
         run: |
           pip install ruff
-          ruff check custom_components/family_planner tests/backend
-          ruff format --check custom_components/family_planner tests/backend
+          ruff check custom_components/homeroster tests/backend
+          ruff format --check custom_components/homeroster tests/backend

@@ -6,7 +6,7 @@ import datetime as dt
 
 import pytest
 
-from custom_components.family_planner.models import (
+from custom_components.homeroster.models import (
     Category,
     Event,
     Person,

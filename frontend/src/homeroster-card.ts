@@ -13,7 +13,7 @@ import {
   type Category,
   type CalendarView,
   type FamilyEvent,
-  type FamilyPlannerCardConfig,
+  type HomeRosterCardConfig,
   type Person,
 } from "./types";
 import { renderAgendaView } from "./views/agenda";
@@ -30,16 +30,16 @@ import "./components/category-manager-dialog";
 
 const VIEWS: CalendarView[] = ["today", "day", "week", "month", "agenda"];
 const BUS_EVENTS = [
-  "family_planner_event_created",
-  "family_planner_event_updated",
-  "family_planner_event_deleted",
+  "homeroster_event_created",
+  "homeroster_event_updated",
+  "homeroster_event_deleted",
 ];
 
-@customElement("family-planner-card")
-export class FamilyPlannerCard extends LitElement {
+@customElement("homeroster-card")
+export class HomeRosterCard extends LitElement {
   static styles = CARD_STYLES;
 
-  @state() private _config!: FamilyPlannerCardConfig;
+  @state() private _config!: HomeRosterCardConfig;
   @state() private _view: CalendarView = "week";
   @state() private _currentDate: Date = new Date();
   @state() private _events: FamilyEvent[] = [];
@@ -95,9 +95,9 @@ export class FamilyPlannerCard extends LitElement {
     if (!config) {
       throw new Error("Ungültige Konfiguration");
     }
-    const merged: FamilyPlannerCardConfig = {
+    const merged: HomeRosterCardConfig = {
       ...DEFAULT_CONFIG,
-      ...(config as FamilyPlannerCardConfig),
+      ...(config as HomeRosterCardConfig),
       type: config.type,
     };
     const wasUnset = !this._config;
@@ -116,9 +116,9 @@ export class FamilyPlannerCard extends LitElement {
     return { rows: this._config?.compact ? 6 : 9, columns: 12, min_rows: 4 };
   }
 
-  static getStubConfig(): FamilyPlannerCardConfig {
+  static getStubConfig(): HomeRosterCardConfig {
     return {
-      type: "custom:family-planner-card",
+      type: "custom:homeroster-card",
       title: "Familienkalender",
       default_view: "week",
     };
@@ -126,7 +126,7 @@ export class FamilyPlannerCard extends LitElement {
 
   static async getConfigElement(): Promise<HTMLElement> {
     await import("./editor");
-    return document.createElement("family-planner-card-editor");
+    return document.createElement("homeroster-card-editor");
   }
 
   disconnectedCallback(): void {
@@ -408,7 +408,7 @@ export class FamilyPlannerCard extends LitElement {
       await this._fetchEvents();
     } catch (err) {
       this._dialogError =
-        err instanceof api.FamilyPlannerApiError
+        err instanceof api.HomeRosterApiError
           ? t(this._resolvedLanguage(), `error.${err.code}`)
           : err instanceof Error
             ? err.message
@@ -723,7 +723,7 @@ export class FamilyPlannerCard extends LitElement {
 
       ${this._createDraft || this._editingEvent
         ? html`
-            <family-planner-event-dialog
+            <homeroster-event-dialog
               .hass=${this._hass}
               .language=${this._language}
               .config=${this._config}
@@ -740,12 +740,12 @@ export class FamilyPlannerCard extends LitElement {
               .defaultIcons=${this._defaultIcons}
               @fp-save=${(e: CustomEvent) => void this._handleDialogSave(e)}
               @fp-close=${() => this._closeEventDialog()}
-            ></family-planner-event-dialog>
+            ></homeroster-event-dialog>
           `
         : nothing}
       ${this._detailEvent
         ? html`
-            <family-planner-event-detail-dialog
+            <homeroster-event-detail-dialog
               .hass=${this._hass}
               .language=${this._language}
               .people=${this._people}
@@ -758,12 +758,12 @@ export class FamilyPlannerCard extends LitElement {
               @fp-duplicate=${() => void this._handleDuplicate(this._detailEvent!.id)}
               @fp-set-status=${(e: CustomEvent<string>) => void this._handleSetStatus(this._detailEvent!.id, e.detail)}
               @fp-close=${() => (this._detailEvent = null)}
-            ></family-planner-event-detail-dialog>
+            ></homeroster-event-detail-dialog>
           `
         : nothing}
       ${this._dayDetail
         ? html`
-            <family-planner-day-detail-dialog
+            <homeroster-day-detail-dialog
               .hass=${this._hass}
               .language=${this._language}
               .people=${this._people}
@@ -780,24 +780,24 @@ export class FamilyPlannerCard extends LitElement {
                 this._openCreate(e.detail.date, true);
               }}
               @fp-close=${() => (this._dayDetail = null)}
-            ></family-planner-day-detail-dialog>
+            ></homeroster-day-detail-dialog>
           `
         : nothing}
       ${this._peopleManagerOpen
         ? html`
-            <family-planner-people-manager-dialog
+            <homeroster-people-manager-dialog
               .hass=${this._hass}
               .language=${this._language}
               .people=${this._people}
               .defaultColors=${this._defaultColors}
               @fp-people-changed=${() => void this._refreshPeople()}
               @fp-close=${() => (this._peopleManagerOpen = false)}
-            ></family-planner-people-manager-dialog>
+            ></homeroster-people-manager-dialog>
           `
         : nothing}
       ${this._categoryManagerOpen
         ? html`
-            <family-planner-category-manager-dialog
+            <homeroster-category-manager-dialog
               .hass=${this._hass}
               .language=${this._language}
               .categories=${this._categories}
@@ -805,7 +805,7 @@ export class FamilyPlannerCard extends LitElement {
               .defaultIcons=${this._defaultIcons}
               @fp-categories-changed=${() => void this._refreshCategories()}
               @fp-close=${() => (this._categoryManagerOpen = false)}
-            ></family-planner-category-manager-dialog>
+            ></homeroster-category-manager-dialog>
           `
         : nothing}
     `;
@@ -814,14 +814,14 @@ export class FamilyPlannerCard extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "family-planner-card": FamilyPlannerCard;
+    "homeroster-card": HomeRosterCard;
   }
 }
 
 window.customCards = window.customCards || [];
 window.customCards.push({
-  type: "family-planner-card",
-  name: "Family Planner",
+  type: "homeroster-card",
+  name: "HomeRoster",
   description: "Lokaler Familienkalender mit Personen, Kategorien und Überlappungs-Ansicht.",
   preview: true,
 });

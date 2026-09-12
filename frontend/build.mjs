@@ -7,9 +7,9 @@ const watch = process.argv.includes("--watch");
 mkdirSync("dist", { recursive: true });
 
 const options = {
-  entryPoints: ["src/family-planner-card.ts"],
+  entryPoints: ["src/homeroster-card.ts"],
   bundle: true,
-  outfile: "dist/family-planner-card.js",
+  outfile: "dist/homeroster-card.js",
   format: "iife",
   target: "es2021",
   minify: !watch,
@@ -23,5 +23,5 @@ if (watch) {
   console.log("Watching for changes...");
 } else {
   await esbuild.build(options);
-  console.log("Built dist/family-planner-card.js");
+  console.log("Built dist/homeroster-card.js");
 }

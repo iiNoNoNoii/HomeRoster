@@ -1,6 +1,6 @@
 {
-  "domain": "family_planner",
-  "name": "Family Planner",
+  "domain": "homeroster",
+  "name": "HomeRoster",
   "codeowners": ["@iiNoNoNoii"],
   "config_flow": true,
   "dependencies": ["http"],

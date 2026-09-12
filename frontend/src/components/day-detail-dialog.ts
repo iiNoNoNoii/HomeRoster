@@ -48,8 +48,8 @@ const STYLES = css`
   }
 `;
 
-@customElement("family-planner-day-detail-dialog")
-export class FamilyPlannerDayDetailDialog extends LitElement {
+@customElement("homeroster-day-detail-dialog")
+export class HomeRosterDayDetailDialog extends LitElement {
   static styles = STYLES;
 
   @property({ attribute: false }) hass!: HomeAssistant;
@@ -78,7 +78,7 @@ export class FamilyPlannerDayDetailDialog extends LitElement {
       month: "long",
     }).format(this.date);
     return html`
-      <family-planner-dialog-shell .heading=${heading} @fp-shell-close=${() => this._close()}>
+      <homeroster-dialog-shell .heading=${heading} @fp-shell-close=${() => this._close()}>
         ${this.events.map((event) => {
           const color = resolveEventColor(event, this.people, this.categories, "person");
           const persons = personsForEvent(event, this.people);
@@ -106,13 +106,13 @@ export class FamilyPlannerDayDetailDialog extends LitElement {
               </button>
             `
           : nothing}
-      </family-planner-dialog-shell>
+      </homeroster-dialog-shell>
     `;
   }
 }
 
 declare global {
   interface HTMLElementTagNameMap {
-    "family-planner-day-detail-dialog": FamilyPlannerDayDetailDialog;
+    "homeroster-day-detail-dialog": HomeRosterDayDetailDialog;
   }
 }

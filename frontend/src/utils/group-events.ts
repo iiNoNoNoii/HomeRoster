@@ -1,6 +1,6 @@
 // Pure day-grouping logic for the "day-grouped event list" views (the week
 // view's per-day sections, the agenda view, and the flat search/category
-// results list in family-planner-card.ts) - kept dependency-free from Lit so
+// results list in homeroster-card.ts) - kept dependency-free from Lit so
 // it can be unit tested directly, mirroring utils/filter-events.ts.
 import type { FamilyEvent } from "../types";
 import { addDays, isSameDay } from "./datetime";

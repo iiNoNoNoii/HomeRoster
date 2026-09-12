@@ -93,8 +93,8 @@ interface DraftCategory {
 
 const EMPTY_DRAFT: DraftCategory = { id: null, name: "", color: "#9e9e9e", icon: "" };
 
-@customElement("family-planner-category-manager-dialog")
-export class FamilyPlannerCategoryManagerDialog extends LitElement {
+@customElement("homeroster-category-manager-dialog")
+export class HomeRosterCategoryManagerDialog extends LitElement {
   static styles = [STYLES, SWATCH_STYLES];
 
   @property({ attribute: false }) hass!: HomeAssistant;
@@ -171,7 +171,7 @@ export class FamilyPlannerCategoryManagerDialog extends LitElement {
     const lang = resolveLanguage(this.language, this.hass?.language ?? "auto");
     const sorted = [...this.categories].sort((a, b) => a.sort_order - b.sort_order);
     return html`
-      <family-planner-dialog-shell .heading=${t(lang, "category.title")} @fp-shell-close=${() => this._close()}>
+      <homeroster-dialog-shell .heading=${t(lang, "category.title")} @fp-shell-close=${() => this._close()}>
         ${this._error ? html`<div class="confirm-box">${this._error}</div>` : nothing}
         ${sorted.map(
           (category, index) => html`
@@ -263,13 +263,13 @@ export class FamilyPlannerCategoryManagerDialog extends LitElement {
               </button>`
             : nothing}
         </div>
-      </family-planner-dialog-shell>
+      </homeroster-dialog-shell>
     `;
   }
 }
 
 declare global {
   interface HTMLElementTagNameMap {
-    "family-planner-category-manager-dialog": FamilyPlannerCategoryManagerDialog;
+    "homeroster-category-manager-dialog": HomeRosterCategoryManagerDialog;
   }
 }

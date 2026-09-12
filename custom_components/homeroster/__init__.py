@@ -1,4 +1,4 @@
-"""The Family Planner integration - a fully local family calendar."""
+"""The HomeRoster integration - a fully local family calendar."""
 
 from __future__ import annotations
 
@@ -48,15 +48,15 @@ from .const import (
     SERVICE_SET_EVENT_STATUS,
     SERVICE_UPDATE_EVENT,
 )
-from .coordinator import EventOccurrence, FamilyPlannerCoordinator
-from .models import FamilyPlannerError
+from .coordinator import EventOccurrence, HomeRosterCoordinator
+from .models import HomeRosterError
 from .websocket_api import async_register_websocket_commands
 
 _LOGGER = logging.getLogger(__name__)
 
 WWW_PATH = Path(__file__).parent / "www"
-CARD_JS_FILENAME = "family-planner-card.js"
-CARD_URL_BASE = "/family_planner_static"
+CARD_JS_FILENAME = "homeroster-card.js"
+CARD_URL_BASE = "/homeroster_static"
 
 _EVENT_FIELDS_SCHEMA = {
     vol.Optional(ATTR_SUBTITLE): vol.Any(str, None),
@@ -118,13 +118,13 @@ SET_STATUS_SCHEMA = vol.Schema(
 )
 
 
-def _get_any_coordinator(hass: HomeAssistant) -> FamilyPlannerCoordinator:
+def _get_any_coordinator(hass: HomeAssistant) -> HomeRosterCoordinator:
     domain_data = hass.data.get(DOMAIN)
     if not domain_data:
-        raise ServiceValidationError("Family Planner ist nicht geladen.")
+        raise ServiceValidationError("HomeRoster ist nicht geladen.")
     for entry_data in domain_data.values():
         return entry_data["coordinator"]
-    raise ServiceValidationError("Family Planner ist nicht geladen.")
+    raise ServiceValidationError("HomeRoster ist nicht geladen.")
 
 
 def _occurrence_to_service_dict(occ: EventOccurrence) -> dict[str, Any]:
@@ -143,7 +143,7 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
         coordinator = _get_any_coordinator(hass)
         try:
             event = await coordinator.async_create_event(dict(call.data))
-        except FamilyPlannerError as err:
+        except HomeRosterError as err:
             raise ServiceValidationError(str(err)) from err
         return {"event": event.to_dict()} if call.return_response else None
 
@@ -154,7 +154,7 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
         expected_version = data.pop("expected_version", None)
         try:
             event = await coordinator.async_update_event(event_id, data, expected_version)
-        except FamilyPlannerError as err:
+        except HomeRosterError as err:
             raise ServiceValidationError(str(err)) from err
         return {"event": event.to_dict()} if call.return_response else None
 
@@ -166,7 +166,7 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
                 mode=call.data.get("mode", "series"),
                 occurrence_start=call.data.get("occurrence_start"),
             )
-        except FamilyPlannerError as err:
+        except HomeRosterError as err:
             raise ServiceValidationError(str(err)) from err
 
     async def handle_get_events(call: ServiceCall) -> ServiceResponse:
@@ -202,7 +202,7 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
                 start_override=call.data.get(ATTR_START),
                 end_override=call.data.get(ATTR_END),
             )
-        except FamilyPlannerError as err:
+        except HomeRosterError as err:
             raise ServiceValidationError(str(err)) from err
         return {"event": event.to_dict()} if call.return_response else None
 
@@ -212,7 +212,7 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
             event = await coordinator.async_set_event_status(
                 call.data[ATTR_EVENT_ID], call.data[ATTR_STATUS]
             )
-        except FamilyPlannerError as err:
+        except HomeRosterError as err:
             raise ServiceValidationError(str(err)) from err
         return {"event": event.to_dict()} if call.return_response else None
 
@@ -286,10 +286,10 @@ async def _async_register_frontend(hass: HomeAssistant) -> None:
     card_file = WWW_PATH / CARD_JS_FILENAME
     if not card_file.exists():
         _LOGGER.warning(
-            "Family Planner: %s wurde nicht gefunden. Die Karte wurde vermutlich noch "
+            "HomeRoster: %s wurde nicht gefunden. Die Karte wurde vermutlich noch "
             "nicht gebaut - siehe README ('npm run build' im frontend/-Verzeichnis) und "
-            "kopiere frontend/dist/family-planner-card.js nach custom_components/"
-            "family_planner/www/.",
+            "kopiere frontend/dist/homeroster-card.js nach custom_components/"
+            "homeroster/www/.",
             card_file,
         )
         return
@@ -310,14 +310,14 @@ async def _async_register_frontend(hass: HomeAssistant) -> None:
     # always served under a brand-new URL, so a stale cache entry can never
     # collide with it.
     content_hash = hashlib.sha256(card_file.read_bytes()).hexdigest()[:10]
-    url_path = f"{CARD_URL_BASE}/family-planner-card-{content_hash}.js"
+    url_path = f"{CARD_URL_BASE}/homeroster-card-{content_hash}.js"
 
     await hass.http.async_register_static_paths(
         [StaticPathConfig(url_path, str(card_file), cache_headers=False)]
     )
     add_extra_js_url(hass, url_path)
     hass.data[f"{DOMAIN}_frontend_registered"] = True
-    _LOGGER.info("Family Planner: Lovelace-Karte erfolgreich unter %s registriert.", url_path)
+    _LOGGER.info("HomeRoster: Lovelace-Karte erfolgreich unter %s registriert.", url_path)
 
 
 async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
@@ -328,10 +328,10 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up Family Planner from a config entry."""
+    """Set up HomeRoster from a config entry."""
     hass.data.setdefault(DOMAIN, {})
 
-    coordinator = FamilyPlannerCoordinator(hass, entry)
+    coordinator = HomeRosterCoordinator(hass, entry)
     await coordinator.async_load()
 
     hass.data[DOMAIN][entry.entry_id] = {"coordinator": coordinator}
@@ -340,8 +340,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     device_registry.async_get_or_create(
         config_entry_id=entry.entry_id,
         identifiers={(DOMAIN, entry.entry_id)},
-        name="Family Planner",
-        manufacturer="Family Planner (lokal, ohne Cloud)",
+        name="HomeRoster",
+        manufacturer="HomeRoster (lokal, ohne Cloud)",
         model="Family Calendar",
         sw_version="1.0.0",
     )
@@ -350,14 +350,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         await _async_register_frontend(hass)
     except ImportError:
         _LOGGER.error(
-            "Family Planner: Die Lovelace-Karte konnte nicht automatisch registriert "
+            "HomeRoster: Die Lovelace-Karte konnte nicht automatisch registriert "
             "werden - diese Home-Assistant-Version ist älter als %s. Bitte Home Assistant "
             "aktualisieren; Backend, Sensoren und Automationen funktionieren unabhängig davon.",
             "2024.10.0",
         )
     except Exception:  # noqa: BLE001 - frontend registration must never break entry setup
         _LOGGER.exception(
-            "Family Planner: Unerwarteter Fehler bei der Registrierung der Lovelace-Karte "
+            "HomeRoster: Unerwarteter Fehler bei der Registrierung der Lovelace-Karte "
             "(www/%s). Backend, Sensoren, Kalender und Automationen funktionieren unabhängig "
             "davon weiter; bitte diesen Fehler im Home-Assistant-Log prüfen.",
             CARD_JS_FILENAME,

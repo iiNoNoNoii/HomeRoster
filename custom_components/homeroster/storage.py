@@ -1,4 +1,4 @@
-"""Persistent local storage for the Family Planner integration."""
+"""Persistent local storage for the HomeRoster integration."""
 
 from __future__ import annotations
 
@@ -45,8 +45,8 @@ def _default_categories() -> list[dict[str, Any]]:
     return categories
 
 
-class FamilyPlannerStore(Store[dict[str, Any]]):
-    """Store subclass handling schema migrations for Family Planner data."""
+class HomeRosterStore(Store[dict[str, Any]]):
+    """Store subclass handling schema migrations for HomeRoster data."""
 
     async def _async_migrate_func(
         self,
@@ -64,7 +64,7 @@ class FamilyPlannerStore(Store[dict[str, Any]]):
         data = dict(old_data)
         if old_major_version > STORAGE_VERSION_MAJOR:
             raise ValueError(
-                "Die gespeicherten Family-Planner-Daten stammen von einer neueren "
+                "Die gespeicherten HomeRoster-Daten stammen von einer neueren "
                 "Version der Integration und können nicht geladen werden."
             )
         data.setdefault("people", [])
@@ -74,9 +74,9 @@ class FamilyPlannerStore(Store[dict[str, Any]]):
         return data
 
 
-def create_store(hass: HomeAssistant, entry_id: str) -> FamilyPlannerStore:
+def create_store(hass: HomeAssistant, entry_id: str) -> HomeRosterStore:
     """Create the Store instance for a given config entry."""
-    return FamilyPlannerStore(
+    return HomeRosterStore(
         hass,
         STORAGE_VERSION_MAJOR,
         f"{STORAGE_KEY_PREFIX}_{entry_id}",

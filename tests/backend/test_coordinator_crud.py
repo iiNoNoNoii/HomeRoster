@@ -8,9 +8,9 @@ import datetime as dt
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.family_planner.const import DOMAIN
-from custom_components.family_planner.coordinator import FamilyPlannerCoordinator
-from custom_components.family_planner.models import ConflictError, NotFoundError, ValidationError
+from custom_components.homeroster.const import DOMAIN
+from custom_components.homeroster.coordinator import HomeRosterCoordinator
+from custom_components.homeroster.models import ConflictError, NotFoundError, ValidationError
 
 
 @pytest.fixture
@@ -23,7 +23,7 @@ async def coordinator(hass):
     hass.config.set_time_zone("Europe/Berlin")
     entry = MockConfigEntry(domain=DOMAIN, data={}, options={"require_person": False})
     entry.add_to_hass(hass)
-    coord = FamilyPlannerCoordinator(hass, entry)
+    coord = HomeRosterCoordinator(hass, entry)
     await coord.async_load()
     yield coord
     await coord.async_unload()
@@ -199,7 +199,7 @@ class TestEventCrud:
             domain=DOMAIN, data={}, options={}
         )  # require_person defaults to True
         entry.add_to_hass(hass)
-        coord = FamilyPlannerCoordinator(hass, entry)
+        coord = HomeRosterCoordinator(hass, entry)
         await coord.async_load()
         with pytest.raises(ValidationError):
             await coord.async_create_event(
@@ -214,7 +214,7 @@ class TestEventCrud:
     async def test_require_person_option_can_be_disabled(self, hass):
         entry = MockConfigEntry(domain=DOMAIN, data={}, options={"require_person": False})
         entry.add_to_hass(hass)
-        coord = FamilyPlannerCoordinator(hass, entry)
+        coord = HomeRosterCoordinator(hass, entry)
         await coord.async_load()
         event = await coord.async_create_event(
             {"title": "X", "start": "2026-09-20T14:00:00+02:00", "end": "2026-09-20T15:00:00+02:00"}

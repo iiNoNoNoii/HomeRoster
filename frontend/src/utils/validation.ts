@@ -1,6 +1,6 @@
 // Pure client-side form validation for the event create/edit dialog. This is
 // a UX convenience layer only - the backend re-validates everything
-// server-side regardless (see custom_components/family_planner/models.py).
+// server-side regardless (see custom_components/homeroster/models.py).
 
 export interface EventFormInput {
   title: string;

@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from custom_components.family_planner.const import STORAGE_VERSION_MAJOR, STORAGE_VERSION_MINOR
-from custom_components.family_planner.storage import create_store, empty_data
+from custom_components.homeroster.const import STORAGE_VERSION_MAJOR, STORAGE_VERSION_MINOR
+from custom_components.homeroster.storage import create_store, empty_data
 
 
 def test_empty_data_seeds_default_categories():
@@ -33,8 +33,8 @@ async def test_store_round_trip(hass):
 async def test_migration_fills_missing_keys_from_older_minor_version(hass, hass_storage):
     # Simulate an on-disk file written by an older minor schema version that
     # predates a key later versions rely on - this must trigger
-    # FamilyPlannerStore._async_migrate_func, not just get() defaults.
-    key = "family_planner_test_entry_migrate"
+    # HomeRosterStore._async_migrate_func, not just get() defaults.
+    key = "homeroster_test_entry_migrate"
     hass_storage[key] = {
         "version": STORAGE_VERSION_MAJOR,
         "minor_version": 0,
@@ -61,7 +61,7 @@ async def test_migration_fills_missing_keys_from_older_minor_version(hass, hass_
 
 
 async def test_migration_rejects_data_from_a_newer_major_version(hass, hass_storage):
-    key = "family_planner_test_entry_future"
+    key = "homeroster_test_entry_future"
     hass_storage[key] = {
         "version": STORAGE_VERSION_MAJOR + 1,
         "minor_version": 0,

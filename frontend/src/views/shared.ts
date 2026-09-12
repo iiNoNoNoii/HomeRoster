@@ -122,7 +122,7 @@ function renderDayGroup(ctx: ViewContext, day: Date, events: FamilyEvent[]): Tem
 /** Renders `ctx.events` (already filtered/range-bounded by the card) as a
  * flat, day-grouped chronological list - used in place of the normal
  * day/week/month/agenda view whenever the user has entered search text or
- * selected at least one category (see family-planner-card.ts). Unlike the
+ * selected at least one category (see homeroster-card.ts). Unlike the
  * agenda view, there is no fixed date range to group against: only days
  * that actually contain a matching event are shown. */
 export function renderFilteredEventList(ctx: ViewContext): TemplateResult {

@@ -1,4 +1,4 @@
-"""Central local-push data manager for the Family Planner integration.
+"""Central local-push data manager for the HomeRoster integration.
 
 This is the single source of truth: it owns the in-memory representation of
 people, categories and events, persists changes to local storage, expands
@@ -89,8 +89,8 @@ class EventOccurrence(NamedTuple):
         return f"{self.event.id}:{self.recurrence_id or 'single'}"
 
 
-class FamilyPlannerCoordinator:
-    """Owns Family Planner data, persistence, recurrence and scheduling."""
+class HomeRosterCoordinator:
+    """Owns HomeRoster data, persistence, recurrence and scheduling."""
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
         self.hass = hass
@@ -171,7 +171,7 @@ class FamilyPlannerCoordinator:
             self.last_save_error = None
         except Exception as err:  # noqa: BLE001 - must never crash a CRUD call
             self.last_save_error = str(err)
-            _LOGGER.error("Family Planner: Speichern fehlgeschlagen: %s", err)
+            _LOGGER.error("HomeRoster: Speichern fehlgeschlagen: %s", err)
             raise
 
     async def async_flush(self) -> None:
@@ -538,7 +538,7 @@ class FamilyPlannerCoordinator:
                     )
                 except RRuleValidationError:
                     _LOGGER.warning(
-                        "Family Planner: Termin %s hat eine ungültige Wiederholungsregel "
+                        "HomeRoster: Termin %s hat eine ungültige Wiederholungsregel "
                         "und wird übersprungen.",
                         event.id,
                     )
@@ -739,7 +739,7 @@ class FamilyPlannerCoordinator:
                         await self._async_send_reminder_notifications(occ, offset)
                 else:
                     _LOGGER.debug(
-                        "Family Planner: Erinnerung für Termin %s (Offset %s Min.) nach "
+                        "HomeRoster: Erinnerung für Termin %s (Offset %s Min.) nach "
                         "Neustart übersprungen, da sie zu weit in der Vergangenheit liegt.",
                         occ.event.id,
                         offset,
@@ -773,7 +773,7 @@ class FamilyPlannerCoordinator:
                 )
             except Exception as err:  # noqa: BLE001 - one bad target must not break the rest
                 _LOGGER.warning(
-                    "Family Planner: Push-Benachrichtigung an %s (notify.%s) fehlgeschlagen: %s",
+                    "HomeRoster: Push-Benachrichtigung an %s (notify.%s) fehlgeschlagen: %s",
                     person.name,
                     person.notify_service,
                     err,

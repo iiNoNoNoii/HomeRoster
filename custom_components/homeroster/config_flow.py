@@ -154,8 +154,8 @@ def _rgb_to_hex(rgb: list[int] | tuple[int, int, int]) -> str:
     return f"#{r:02x}{g:02x}{b:02x}"
 
 
-class FamilyPlannerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Handle the initial setup of Family Planner (no external account needed)."""
+class HomeRosterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+    """Handle the initial setup of HomeRoster (no external account needed)."""
 
     VERSION = 1
 
@@ -165,18 +165,18 @@ class FamilyPlannerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if self._async_current_entries():
             return self.async_abort(reason="single_instance_allowed")
         if user_input is not None:
-            return self.async_create_entry(title="Family Planner", data={})
+            return self.async_create_entry(title="HomeRoster", data={})
         return self.async_show_form(step_id="user")
 
     @staticmethod
     @callback
     def async_get_options_flow(
         config_entry: config_entries.ConfigEntry,
-    ) -> FamilyPlannerOptionsFlow:
-        return FamilyPlannerOptionsFlow()
+    ) -> HomeRosterOptionsFlow:
+        return HomeRosterOptionsFlow()
 
 
-class FamilyPlannerOptionsFlow(config_entries.OptionsFlow):
+class HomeRosterOptionsFlow(config_entries.OptionsFlow):
     """Options: general settings plus a basic people/category manager.
 
     The rich, everyday person/category management happens in the card's own
@@ -354,7 +354,7 @@ class FamilyPlannerOptionsFlow(config_entries.OptionsFlow):
                     return await self.async_step_init()
             except (ValidationError, NotFoundError) as err:
                 errors["base"] = "invalid_person"
-                _LOGGER.debug("Family Planner options: %s", err)
+                _LOGGER.debug("HomeRoster options: %s", err)
 
         person_choices = {p.id: f"{p.name} ({'aktiv' if p.active else 'inaktiv'})" for p in people}
         schema = vol.Schema(
@@ -408,7 +408,7 @@ class FamilyPlannerOptionsFlow(config_entries.OptionsFlow):
                 return await self.async_step_people()
             except ValidationError as err:
                 errors["base"] = "reassign_target_required"
-                _LOGGER.debug("Family Planner options: %s", err)
+                _LOGGER.debug("HomeRoster options: %s", err)
 
         schema = vol.Schema(
             {
@@ -477,7 +477,7 @@ class FamilyPlannerOptionsFlow(config_entries.OptionsFlow):
                     return await self.async_step_init()
             except (ValidationError, NotFoundError) as err:
                 errors["base"] = "invalid_category"
-                _LOGGER.debug("Family Planner options: %s", err)
+                _LOGGER.debug("HomeRoster options: %s", err)
 
         category_choices = {c.id: c.name for c in categories}
         schema = vol.Schema(

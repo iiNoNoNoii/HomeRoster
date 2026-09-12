@@ -2,18 +2,18 @@
   "config": {
     "step": {
       "user": {
-        "title": "Set up Family Planner",
-        "description": "Family Planner is a fully local family calendar with no cloud service. All data stays inside Home Assistant. Click Submit to continue."
+        "title": "Set up HomeRoster",
+        "description": "HomeRoster is a fully local family calendar with no cloud service. All data stays inside Home Assistant. Click Submit to continue."
       }
     },
     "abort": {
-      "single_instance_allowed": "Family Planner is already set up. Only one instance is supported."
+      "single_instance_allowed": "HomeRoster is already set up. Only one instance is supported."
     }
   },
   "options": {
     "step": {
       "init": {
-        "title": "Family Planner - Settings",
+        "title": "HomeRoster - Settings",
         "menu_options": {
           "settings": "General settings",
           "people": "Manage people",
@@ -74,7 +74,7 @@
       "reassign_target_required": "Please select a target person for reassignment."
     },
     "abort": {
-      "not_loaded": "Family Planner is not fully loaded yet. Please wait a moment and try again."
+      "not_loaded": "HomeRoster is not fully loaded yet. Please wait a moment and try again."
     }
   },
   "selector": {

@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.family_planner.const import DOMAIN
+from custom_components.homeroster.const import DOMAIN
 
 
 async def test_setup_entry_creates_coordinator_and_entities(hass):
@@ -27,12 +27,12 @@ async def test_setup_entry_creates_coordinator_and_entities(hass):
     assert coordinator.get_people() == []
     assert coordinator.get_categories()  # default categories seeded
 
-    assert hass.states.get("sensor.family_planner_events_today") is not None
-    assert hass.states.get("sensor.family_planner_events_tomorrow") is not None
-    assert hass.states.get("sensor.family_planner_next_event") is not None
-    assert hass.states.get("sensor.family_planner_next_birthday") is not None
-    assert hass.states.get("binary_sensor.family_planner_event_active") is not None
-    assert hass.states.get("calendar.family_planner") is not None
+    assert hass.states.get("sensor.homeroster_events_today") is not None
+    assert hass.states.get("sensor.homeroster_events_tomorrow") is not None
+    assert hass.states.get("sensor.homeroster_next_event") is not None
+    assert hass.states.get("sensor.homeroster_next_birthday") is not None
+    assert hass.states.get("binary_sensor.homeroster_event_active") is not None
+    assert hass.states.get("calendar.homeroster") is not None
 
     assert await hass.config_entries.async_unload(entry.entry_id)
     await hass.async_block_till_done()

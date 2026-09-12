@@ -1,6 +1,6 @@
 """Tests for the Android/Companion-App push notification feature: the
 coordinator's periodic reminder tick calling `notify.<person.notify_service>`
-in addition to firing `family_planner_reminder_due`, gated by the
+in addition to firing `homeroster_reminder_due`, gated by the
 `send_mobile_notifications` option and each person's own opt-in."""
 
 from __future__ import annotations
@@ -11,8 +11,8 @@ import pytest
 from freezegun import freeze_time
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.family_planner.const import CONF_SEND_MOBILE_NOTIFICATIONS, DOMAIN
-from custom_components.family_planner.coordinator import FamilyPlannerCoordinator
+from custom_components.homeroster.const import CONF_SEND_MOBILE_NOTIFICATIONS, DOMAIN
+from custom_components.homeroster.coordinator import HomeRosterCoordinator
 
 UTC = dt.timezone.utc
 
@@ -39,14 +39,14 @@ async def make_coordinator(hass):
     and guarantees `async_unload()` runs (stopping its periodic timer) even
     if the test body fails an assertion."""
     hass.config.set_time_zone("Europe/Berlin")
-    created: list[FamilyPlannerCoordinator] = []
+    created: list[HomeRosterCoordinator] = []
 
-    async def _make(**options) -> FamilyPlannerCoordinator:
+    async def _make(**options) -> HomeRosterCoordinator:
         entry = MockConfigEntry(
             domain=DOMAIN, data={}, options={"require_person": False, **options}
         )
         entry.add_to_hass(hass)
-        coord = FamilyPlannerCoordinator(hass, entry)
+        coord = HomeRosterCoordinator(hass, entry)
         await coord.async_load()
         created.append(coord)
         return coord

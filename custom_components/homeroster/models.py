@@ -1,4 +1,4 @@
-"""Data models for the Family Planner integration."""
+"""Data models for the HomeRoster integration."""
 
 from __future__ import annotations
 
@@ -14,25 +14,25 @@ from .const import EVENT_STATUSES, PERSON_ROLES
 from .recurrence import RRuleValidationError, validate_rrule
 
 
-class FamilyPlannerError(Exception):
-    """Base error for Family Planner."""
+class HomeRosterError(Exception):
+    """Base error for HomeRoster."""
 
     code = "unknown_error"
 
 
-class ValidationError(FamilyPlannerError):
+class ValidationError(HomeRosterError):
     """Raised when user-supplied data fails validation."""
 
     code = "invalid_data"
 
 
-class NotFoundError(FamilyPlannerError):
+class NotFoundError(HomeRosterError):
     """Raised when a referenced object does not exist."""
 
     code = "not_found"
 
 
-class ConflictError(FamilyPlannerError):
+class ConflictError(HomeRosterError):
     """Raised when an optimistic-concurrency check fails."""
 
     code = "conflict"

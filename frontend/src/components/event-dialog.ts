@@ -1,11 +1,11 @@
 // Create/edit dialog for a single event. Client-side validation only - the
-// backend re-validates everything (see custom_components/family_planner/models.py).
+// backend re-validates everything (see custom_components/homeroster/models.py).
 import { LitElement, css, html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import "./dialog-shell";
 import type { EventCreateInput, EventUpdateInput } from "../api";
 import type { HomeAssistant } from "../ha-types";
-import type { Category, EventStatus, FamilyEvent, FamilyPlannerCardConfig, Person } from "../types";
+import type { Category, EventStatus, FamilyEvent, HomeRosterCardConfig, Person } from "../types";
 import { DEFAULT_COLORS, DEFAULT_ICONS, DEFAULT_REMINDER_MINUTES, REMINDER_PRESETS } from "../const";
 import { combineLocalDateTime, computeEndFromStart, dateOnly, shiftDateString, toTimeInput } from "../utils/datetime";
 import { resolveLanguage, t } from "../utils/localize";
@@ -149,8 +149,8 @@ const FORM_STYLES = css`
   }
 `;
 
-@customElement("family-planner-event-dialog")
-export class FamilyPlannerEventDialog extends LitElement {
+@customElement("homeroster-event-dialog")
+export class HomeRosterEventDialog extends LitElement {
   static styles = [FORM_STYLES, SWATCH_STYLES];
 
   @property({ attribute: false }) hass!: HomeAssistant;
@@ -159,7 +159,7 @@ export class FamilyPlannerEventDialog extends LitElement {
   // explicit admin override applied regardless of the viewer's own HA
   // language (see utils/localize.ts's resolveLanguage()).
   @property({ type: String }) language = "auto";
-  @property({ attribute: false }) config!: FamilyPlannerCardConfig;
+  @property({ attribute: false }) config!: HomeRosterCardConfig;
   @property({ attribute: false }) people: Person[] = [];
   @property({ attribute: false }) categories: Category[] = [];
   @property({ attribute: false }) event: FamilyEvent | null = null;
@@ -374,7 +374,7 @@ export class FamilyPlannerEventDialog extends LitElement {
     const lang = resolveLanguage(this.language, this.hass?.language ?? "auto");
     const heading = this.event ? t(lang, "event.edit_title") : t(lang, "event.new_title");
     return html`
-      <family-planner-dialog-shell .heading=${heading} wide @fp-shell-close=${() => this._requestClose()}>
+      <homeroster-dialog-shell .heading=${heading} wide @fp-shell-close=${() => this._requestClose()}>
         ${this.serverError ? html`<div class="server-error">${this.serverError}</div>` : nothing}
         ${this._confirmingDiscard
           ? html`
@@ -395,7 +395,7 @@ export class FamilyPlannerEventDialog extends LitElement {
               </div>
             `
           : this._renderForm(lang)}
-      </family-planner-dialog-shell>
+      </homeroster-dialog-shell>
     `;
   }
 
@@ -695,6 +695,6 @@ export class FamilyPlannerEventDialog extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "family-planner-event-dialog": FamilyPlannerEventDialog;
+    "homeroster-event-dialog": HomeRosterEventDialog;
   }
 }

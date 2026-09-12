@@ -1,10 +1,10 @@
-"""Constants for the Family Planner integration."""
+"""Constants for the HomeRoster integration."""
 
 from __future__ import annotations
 
 from typing import Final
 
-DOMAIN: Final = "family_planner"
+DOMAIN: Final = "homeroster"
 PLATFORMS: Final = ["calendar", "sensor", "binary_sensor"]
 
 # Storage
@@ -13,7 +13,7 @@ STORAGE_VERSION_MAJOR: Final = 1
 # stored people without it load fine via Person.from_dict()'s .get()
 # default, so this did not require a minor-version bump.
 STORAGE_VERSION_MINOR: Final = 1
-STORAGE_KEY_PREFIX: Final = "family_planner"
+STORAGE_KEY_PREFIX: Final = "homeroster"
 
 # Config / options keys
 CONF_REQUIRE_PERSON: Final = "require_person"

@@ -9,7 +9,7 @@
 // the "Heute"/"Today" nav button resets the current date - not a snap to
 // the Mon-Sun/Sun-Sat calendar week the old implementation used. That old
 // behavior could show several already-past days whenever "today" wasn't a
-// Monday (or Sunday, depending on first_weekday). family-planner-card.ts's
+// Monday (or Sunday, depending on first_weekday). homeroster-card.ts's
 // _computeRange() ("week" case) and _rangeLabel() ("week" case) must stay in
 // sync with the day window computed here - see computeWeekDays() below,
 // which both this view and the card's range/label logic are built on.

@@ -1,10 +1,10 @@
 *[English version](README.md)*
 
-# Family Planner
+# HomeRoster
 
 Ein vollständig **lokaler** digitaler Familienkalender für Home Assistant –
 ohne Cloud-Dienst, ohne externen Account, ohne Internetverbindung im
-Normalbetrieb. Family Planner besteht aus einer Custom Integration (Python)
+Normalbetrieb. HomeRoster besteht aus einer Custom Integration (Python)
 als Backend und einer eigenen Lovelace-Karte (TypeScript/Lit) als Frontend.
 
 > **Kein Google Calendar, kein iCloud, kein Homsy-Cloud-Dienst nötig.** Alle
@@ -114,14 +114,14 @@ Screenshots für dein Repository:
    Repositories**.
 2. Repository-URL dieses Projekts eintragen, Kategorie **Integration**
    wählen, hinzufügen.
-3. "Family Planner" in HACS suchen und installieren.
+3. "HomeRoster" in HACS suchen und installieren.
 4. Home Assistant neu starten.
 
 ### Manuell
 
-1. Den Ordner `custom_components/family_planner` dieses Repositories nach
-   `<config>/custom_components/family_planner` kopieren.
-2. Sicherstellen, dass `custom_components/family_planner/www/family-planner-card.js`
+1. Den Ordner `custom_components/homeroster` dieses Repositories nach
+   `<config>/custom_components/homeroster` kopieren.
+2. Sicherstellen, dass `custom_components/homeroster/www/homeroster-card.js`
    vorhanden ist (im Repository bereits mitgebaut; siehe
    [Entwicklung](#entwicklung), falls du die Karte selbst neu bauen willst).
 3. Home Assistant neu starten.
@@ -135,7 +135,7 @@ Screenshots für dein Repository:
    `add_extra_js_url`) – in der Regel ist **kein manuelles Hinzufügen einer
    Lovelace-Ressource nötig**. Die genaue URL enthält einen Cache-Busting-Hash
    und wechselt bei jedem Update der Karte (z. B.
-   `/family_planner_static/family-planner-card-<hash>.js`); die aktuell
+   `/homeroster_static/homeroster-card-<hash>.js`); die aktuell
    registrierte URL steht im Home-Assistant-Log (INFO-Meldung „Family
    Planner: Lovelace-Karte erfolgreich unter … registriert“) sowie unter
    **Einstellungen → Dashboards → Ressourcen**. Erscheint die Karte trotzdem
@@ -150,7 +150,7 @@ Administrative Grundeinstellungen (z. B. ob mindestens eine Person pro
 Termin Pflicht ist, ob Nicht-Administratoren Termine bearbeiten dürfen, die
 Kartensprache oder ob Erinnerungen zusätzlich per Home-Assistant-App
 gesendet werden) finden sich unter **Einstellungen → Geräte & Dienste →
-Family Planner → Konfigurieren**. Dort lassen sich Personen und Kategorien
+HomeRoster → Konfigurieren**. Dort lassen sich Personen und Kategorien
 auch ohne geladene Karte anlegen, bearbeiten, umsortieren, deaktivieren und
 löschen – das ist der frontend-unabhängige Fallback-Weg; im Alltag ist die
 Personen-/Kategorienverwaltung direkt in der Karte komfortabler.
@@ -158,9 +158,9 @@ Personen-/Kategorienverwaltung direkt in der Karte komfortabler.
 ## Kartenkonfiguration
 
 ```yaml
-type: custom:family-planner-card
+type: custom:homeroster-card
 title: Familienkalender
-entity: calendar.family_planner
+entity: calendar.homeroster
 default_view: week
 people:
   - anna
@@ -227,7 +227,7 @@ mehr an eine einzelne Kalenderwoche gebunden ist. Die Tages-/„Heute“-Ansicht
 selbst ist unverändert ein stundenweises Zeitraster für genau einen Tag.
 
 **Kartensprache:** Über die Integrationsoption „Kartensprache“
-(**Einstellungen → Geräte & Dienste → Family Planner → Konfigurieren →
+(**Einstellungen → Geräte & Dienste → HomeRoster → Konfigurieren →
 Allgemeine Einstellungen**) lässt sich die Sprache der Karte fest auf
 Deutsch oder Englisch einstellen, unabhängig von der individuellen
 Home-Assistant-Spracheinstellung jedes einzelnen Benutzers. Der
@@ -307,7 +307,7 @@ Fehlermeldung statt eines falschen Ergebnisses.
 
 Termine können mehrere Erinnerungs-Offsets speichern (zum Start, 5/15/30/60
 Minuten vorher, 1 Tag vorher oder ein frei wählbarer Minutenwert). Die
-Integration feuert bei Fälligkeit das Event `family_planner_reminder_due`,
+Integration feuert bei Fälligkeit das Event `homeroster_reminder_due`,
 das eine Automation auswertet (siehe
 [Automationsbeispiele](#automationsbeispiele)); das entkoppelt die
 Zustellung (Mobile App, TTS, Licht, …) vollständig vom Kalender.
@@ -315,11 +315,11 @@ Zustellung (Mobile App, TTS, Licht, …) vollständig vom Kalender.
 Optional kann die Integration Erinnerungen zusätzlich automatisch als
 Push-Benachrichtigung über die Home-Assistant-Begleit-App zustellen. Über
 die Integrationsoption **„Erinnerungen per Home-Assistant-App senden“**
-(**Einstellungen → Geräte & Dienste → Family Planner → Konfigurieren**,
+(**Einstellungen → Geräte & Dienste → HomeRoster → Konfigurieren**,
 Standard: an) ruft die Integration zum jeweils konfigurierten
 Erinnerungszeitpunkt automatisch den in der Personenverwaltung hinterlegten
 `notify.*`-Service jeder zugewiesenen Person auf – zusätzlich zum (nicht
-anstelle des) `family_planner_reminder_due`-Events, sodass bestehende
+anstelle des) `homeroster_reminder_due`-Events, sodass bestehende
 eigene Automationen unverändert weiterlaufen. Vorausgesetzt sind dafür
 **beide** Bedingungen: die globale Option ist aktiv **und** die jeweilige
 Person hat ein Benachrichtigungsziel hinterlegt (siehe
@@ -334,7 +334,7 @@ Verhalten in Sonderfällen:
 | Situation | Verhalten |
 | --- | --- |
 | Neustart kurz vor einer Erinnerung | Erinnerung wird nach dem Start regulär geprüft und ausgelöst, sobald der erste Prüf-Tick (Standard: alle 30s) läuft. |
-| Neustart während ein Termin läuft | `family_planner_event_started` wird beim ersten Tick nach dem Start nachgeholt, sofern der Termin dann noch aktiv ist; die Aktiv-Sensoren zeigen den korrekten Zustand sofort nach dem Laden. |
+| Neustart während ein Termin läuft | `homeroster_event_started` wird beim ersten Tick nach dem Start nachgeholt, sofern der Termin dann noch aktiv ist; die Aktiv-Sensoren zeigen den korrekten Zustand sofort nach dem Laden. |
 | Bearbeiten eines Termins | Die Menge bereits ausgelöster Erinnerungen bleibt an die (Termin-ID, Instanz, Offset)-Kombination gebunden; Änderungen an Uhrzeit/Offsets können dieselbe Erinnerung erneut fällig werden lassen. |
 | Löschen eines Termins | Offene, noch nicht ausgelöste Erinnerungen verfallen ersatzlos. |
 | Sommer-/Winterzeitwechsel | Alle internen Zeitvergleiche laufen in UTC; die lokale Zeitzone wird nur für die Anzeige und für ganztägige Termine verwendet – DST-Wechsel verschieben keine Erinnerungszeitpunkte. |
@@ -347,42 +347,42 @@ aufgeräumt, damit die Speicherdatei nicht unbegrenzt wächst.
 
 **Calendar-Entities**
 
-- `calendar.family_planner` – alle Termine, unterstützt Erstellen/
+- `calendar.homeroster` – alle Termine, unterstützt Erstellen/
   Bearbeiten/Löschen über die native `calendar.create_event` /
   `calendar.update_event` / `calendar.delete_event`-Action.
-- `calendar.family_planner_<person>` – ein schreibgeschützter, nach Person
+- `calendar.homeroster_<person>` – ein schreibgeschützter, nach Person
   gefilterter Kalender je aktiver Person (Entity-ID aus dem Personennamen
-  abgeleitet, z. B. `calendar.family_planner_anna`).
+  abgeleitet, z. B. `calendar.homeroster_anna`).
 
 **Sensoren**
 
-- `sensor.family_planner_events_today` / `..._today_<person>` – Anzahl
+- `sensor.homeroster_events_today` / `..._today_<person>` – Anzahl
   (State) und Liste (Attribut `events`, auf 20 begrenzt) der heutigen
   Termine.
-- `sensor.family_planner_events_tomorrow` – Anzahl der morgigen Termine.
-- `sensor.family_planner_next_event` / `..._next_event_<person>` –
+- `sensor.homeroster_events_tomorrow` – Anzahl der morgigen Termine.
+- `sensor.homeroster_next_event` / `..._next_event_<person>` –
   Timestamp-Sensor, State = ISO-Zeitpunkt des nächsten (oder laufenden)
   Termins bzw. `unbekannt`, Attribute inkl. Titel, Ort, Personen, Kategorie.
-- `sensor.family_planner_next_birthday` – nächster Termin der Kategorie
+- `sensor.homeroster_next_birthday` – nächster Termin der Kategorie
   „Geburtstag“, sofern vorhanden.
-- `binary_sensor.family_planner_event_active` / `..._event_active_<person>`
+- `binary_sensor.homeroster_event_active` / `..._event_active_<person>`
   – an, solange mindestens ein (nicht abgesagter) Termin aktiv läuft.
 
 Sensoren aktualisieren sich ausschließlich bei tatsächlichen Änderungen
 (Termin angelegt/geändert/gelöscht, Start/Ende-Übergang, Tageswechsel) –
 nicht sekündlich.
 
-**Services/Actions** (Domain `family_planner`, siehe `services.yaml` für
+**Services/Actions** (Domain `homeroster`, siehe `services.yaml` für
 alle Felder und Selektoren):
 
 `create_event`, `update_event`, `delete_event`, `get_events`,
 `get_today_events`, `get_next_event`, `duplicate_event`,
 `set_event_status`.
 
-**Events auf dem Event-Bus:** `family_planner_event_created`,
-`family_planner_event_updated`, `family_planner_event_deleted`,
-`family_planner_event_started`, `family_planner_event_ended`,
-`family_planner_reminder_due`. Jede Nutzlast enthält mindestens
+**Events auf dem Event-Bus:** `homeroster_event_created`,
+`homeroster_event_updated`, `homeroster_event_deleted`,
+`homeroster_event_started`, `homeroster_event_ended`,
+`homeroster_reminder_due`. Jede Nutzlast enthält mindestens
 `event_id`, `title`, `start`, `end`, `all_day`, `person_ids` – bewusst
 ohne Beschreibung/Ort, um keine unnötigen Inhalte auf dem Event-Bus zu
 verteilen.
@@ -393,29 +393,29 @@ Vollständige, kopierfertige Beispiele stehen in
 [`docs/automations.yaml`](docs/automations.yaml):
 
 1. Morgens 07:00 Uhr Zusammenfassung der heutigen Termine per
-   `family_planner.get_today_events` + Benachrichtigung.
+   `homeroster.get_today_events` + Benachrichtigung.
 2. Erinnerung 30 Minuten vor einem Termin einer bestimmten Person über
-   `family_planner_reminder_due`.
+   `homeroster_reminder_due`.
 3. Reaktion auf neu erstellte/geänderte Termine (Logbuch-Eintrag).
-4. LED-Hinweis bei Terminstart (`family_planner_event_started`).
+4. LED-Hinweis bei Terminstart (`homeroster_event_started`).
 5. Termin automatisch als erledigt markieren, wenn er endet
-   (`family_planner_event_ended` + `family_planner.set_event_status`).
+   (`homeroster_event_ended` + `homeroster.set_event_status`).
 
 Template-Beispiele für Dashboard-Text (siehe auch
 [`docs/dashboards.yaml`](docs/dashboards.yaml)):
 
 ```jinja2
-Heute stehen {{ states('sensor.family_planner_events_today') }} Termine an.
+Heute stehen {{ states('sensor.homeroster_events_today') }} Termine an.
 ```
 
 ```jinja2
-{% set next = states.sensor.family_planner_next_event %}
+{% set next = states.sensor.homeroster_next_event %}
 Der nächste Termin ist {{ next.attributes.title }} um
 {{ as_timestamp(next.state) | timestamp_custom('%H:%M', true) }} Uhr.
 ```
 
 ```jinja2
-{% if states('sensor.family_planner_events_today_mia') | int(0) == 0 %}
+{% if states('sensor.homeroster_events_today_mia') | int(0) == 0 %}
 Mia hat heute keine Termine.
 {% endif %}
 ```
@@ -423,7 +423,7 @@ Mia hat heute keine Termine.
 Alle Termine zwischen zwei Zeitpunkten abfragen (z. B. in einem Skript):
 
 ```yaml
-- action: family_planner.get_events
+- action: homeroster.get_events
   data:
     start: "2026-09-20T00:00:00+02:00"
     end: "2026-09-27T00:00:00+02:00"
@@ -439,13 +439,13 @@ für „Heute“-Kachel, „Nächster Termin“-Kachel und Personenkachel.
 
 ## Backup, Import und Export
 
-Alle Daten liegen unter `<config>/.storage/family_planner_<entry_id>` und
+Alle Daten liegen unter `<config>/.storage/homeroster_<entry_id>` und
 sind damit automatisch Teil jedes regulären Home-Assistant-Backups.
 
 Zusätzlich bietet die Karte (Administrator) **JSON-Export** und
 **JSON-Import** über die Personenverwaltungs-/Einstellungsdialoge bzw.
-direkt über die WebSocket-Actions `family_planner/export_json` und
-`family_planner/import_json`:
+direkt über die WebSocket-Actions `homeroster/export_json` und
+`homeroster/import_json`:
 
 - Export liefert Personen, Kategorien und Termine als ein JSON-Dokument.
 - Import validiert jeden Eintrag serverseitig; fehlerhafte Einträge werden
@@ -491,7 +491,7 @@ vorgetäuscht.
 
 ## Diagnose
 
-**Einstellungen → Geräte & Dienste → Family Planner → Diagnose
+**Einstellungen → Geräte & Dienste → HomeRoster → Diagnose
 herunterladen** liefert ausschließlich Metadaten: Integrationsversion,
 Schema-Version, Anzahl Personen/Kategorien/Termine, frühestes/spätestes
 Termindatum, letzter Speicherfehler, Migrationsstatus. **Keine**
@@ -522,9 +522,9 @@ Termintitel, Beschreibungen, Orte oder Personennamen werden exportiert.
 
 | Problem | Lösung |
 | --- | --- |
-| Browser-Konsole zeigt `Uncaught (in promise) Error: Custom element not found: family-planner-card` | Die Karte wurde vom Browser nicht (mehr) geladen. Ursachen in der Reihenfolge ihrer Wahrscheinlichkeit: **(1)** Integration wurde vor dieser Version installiert/aktualisiert, als `http` noch nicht als `dependencies` in `manifest.json` deklariert war – Home Assistant vollständig neu starten (nicht nur die Integration neu laden), damit `hass.http` beim Setup garantiert schon bereitsteht. **(2)** Ein bereits offener Browser-Tab hat die Registrierung verpasst, weil `add_extra_js_url` nur beim (Neu-)Laden der Frontend-Startseite wirkt – Tab mit Hard-Refresh neu laden (Strg/Cmd+Shift+R) oder Dashboard neu öffnen. **(3)** `custom_components/family_planner/www/family-planner-card.js` fehlt oder ist beschädigt – Home-Assistant-Log nach `Family Planner` durchsuchen: eine WARNING-Zeile weist auf eine fehlende Datei hin, eine ERROR-Zeile (mit vollem Traceback) auf einen unerwarteten Fehler bei der Registrierung; in beiden Fällen laufen Backend/Sensoren/Kalender trotzdem normal weiter. Eine erfolgreiche Registrierung wird als INFO-Zeile mit der tatsächlich verwendeten URL geloggt. |
+| Browser-Konsole zeigt `Uncaught (in promise) Error: Custom element not found: homeroster-card` | Die Karte wurde vom Browser nicht (mehr) geladen. Ursachen in der Reihenfolge ihrer Wahrscheinlichkeit: **(1)** Integration wurde vor dieser Version installiert/aktualisiert, als `http` noch nicht als `dependencies` in `manifest.json` deklariert war – Home Assistant vollständig neu starten (nicht nur die Integration neu laden), damit `hass.http` beim Setup garantiert schon bereitsteht. **(2)** Ein bereits offener Browser-Tab hat die Registrierung verpasst, weil `add_extra_js_url` nur beim (Neu-)Laden der Frontend-Startseite wirkt – Tab mit Hard-Refresh neu laden (Strg/Cmd+Shift+R) oder Dashboard neu öffnen. **(3)** `custom_components/homeroster/www/homeroster-card.js` fehlt oder ist beschädigt – Home-Assistant-Log nach `HomeRoster` durchsuchen: eine WARNING-Zeile weist auf eine fehlende Datei hin, eine ERROR-Zeile (mit vollem Traceback) auf einen unerwarteten Fehler bei der Registrierung; in beiden Fällen laufen Backend/Sensoren/Kalender trotzdem normal weiter. Eine erfolgreiche Registrierung wird als INFO-Zeile mit der tatsächlich verwendeten URL geloggt. |
 | Karte erscheint nicht im Karten-Picker | Ressource manuell hinzufügen (siehe [Einrichtung](#einrichtung)); danach Browser-Cache leeren/Dashboard neu laden. |
-| Karte zeigt „Family Planner wird noch geladen…“ | Integration ist noch nicht vollständig gestartet; kurz warten. Bleibt der Zustand bestehen, Home-Assistant-Log auf Fehler beim Setup von `family_planner` prüfen. |
+| Karte zeigt „HomeRoster wird noch geladen…“ | Integration ist noch nicht vollständig gestartet; kurz warten. Bleibt der Zustand bestehen, Home-Assistant-Log auf Fehler beim Setup von `homeroster` prüfen. |
 | „Verbindung zu Home Assistant verloren“-Banner | Die Karte erkennt WebSocket-Verbindungsabbrüche automatisch und lädt Termine nach Wiederherstellung der Verbindung neu; keine Aktion nötig. |
 | Speichern schlägt fehl / Konfliktmeldung | Ein anderes Gerät hat denselben Termin zwischenzeitlich geändert (optimistische Sperrung anhand einer Versionsnummer). Termin neu laden und Änderung erneut vornehmen. |
 | „Diese Home-Assistant-Version ist älter als 2024.10.0“ im Log | Home Assistant aktualisieren; Backend/Sensoren funktionieren trotzdem, nur die automatische Karten-Registrierung entfällt. |
@@ -534,7 +534,7 @@ Termintitel, Beschreibungen, Orte oder Personennamen werden exportiert.
 
 Das Speicherformat ist versioniert (`STORAGE_VERSION_MAJOR` /
 `STORAGE_VERSION_MINOR` in `const.py`). Zukünftige Datenmodelländerungen
-werden über `FamilyPlannerStore._async_migrate_func`
+werden über `HomeRosterStore._async_migrate_func`
 (`storage.py`) migriert; ein Versionssprung auf eine **neuere** Major-
 Version, als die installierte Integration kennt, wird kontrolliert
 abgelehnt statt Daten stillschweigend zu beschädigen. Vor größeren
@@ -544,7 +544,7 @@ Updates empfiehlt sich wie immer ein reguläres Home-Assistant-Backup.
 
 ### Vor der Veröffentlichung
 
-`custom_components/family_planner/manifest.json`s `codeowners`,
+`custom_components/homeroster/manifest.json`s `codeowners`,
 `documentation` und `issue_tracker` verweisen bereits auf das echte
 Repository (`iiNoNoNoii/HomeRoster`). `.github/workflows/` führt bei jedem
 Push und Pull Request die HACS-/hassfest-Validierung sowie die
@@ -557,9 +557,9 @@ nicht erforderlich.
 ### Repository-Struktur
 
 ```text
-family-planner/
-├── custom_components/family_planner/   # Backend (Python)
-│   ├── www/family-planner-card.js      # vorgebaute Karte (siehe unten)
+homeroster/
+├── custom_components/homeroster/   # Backend (Python)
+│   ├── www/homeroster-card.js      # vorgebaute Karte (siehe unten)
 │   └── ...
 ├── frontend/                           # Frontend-Quellcode (TypeScript/Lit)
 ├── tests/backend/                      # pytest (Backend)
@@ -580,15 +580,15 @@ wie es für pytest/Home-Assistant-Custom-Component-Tests üblich ist.
 ```bash
 cd frontend
 npm install
-npm run build      # -> frontend/dist/family-planner-card.js
+npm run build      # -> frontend/dist/homeroster-card.js
 ```
 
 Nach jeder Änderung muss die gebaute Datei zusätzlich nach
-`custom_components/family_planner/www/family-planner-card.js` kopiert
+`custom_components/homeroster/www/homeroster-card.js` kopiert
 werden (im Repository ist bereits ein aktueller Build enthalten):
 
 ```bash
-cp frontend/dist/family-planner-card.js custom_components/family_planner/www/
+cp frontend/dist/homeroster-card.js custom_components/homeroster/www/
 ```
 
 `npm run watch` baut bei Änderungen automatisch neu (unminifiziert, mit
@@ -637,7 +637,7 @@ und Validierung über die echte WebSocket-API (`hass_ws_client`).
 > bekommt exakt dieselben Testergebnisse.
 
 Backend-Qualität: vollständige Typannotationen, `ruff` für Linting/
-Formatierung (`ruff check custom_components/family_planner tests/backend`,
+Formatierung (`ruff check custom_components/homeroster tests/backend`,
 `ruff format ...`), ausschließlich asynchroner, nicht-blockierender Code
 gemäß Home-Assistant-Konventionen.
 
@@ -658,7 +658,7 @@ gemäß Home-Assistant-Konventionen.
 - [x] Ein Termin lässt sich öffnen, bearbeiten und löschen.
 - [x] Ganztägige und mehrtägige Termine funktionieren korrekt
       (DST-sicher, siehe Tests).
-- [x] `calendar.family_planner` ist für Home-Assistant-Automationen
+- [x] `calendar.homeroster` ist für Home-Assistant-Automationen
       nutzbar.
 - [x] Der nächste Termin ist über eine Entity oder Action abrufbar.
 - [x] Die heutigen Termine sind über eine Entity oder Action abrufbar.
@@ -694,7 +694,7 @@ einzelner Serieninstanzen, ICS-Interoperabilität, feinere Berechtigungen
 über Administrator/Nutzer hinaus, Sprachassistent-Integration, erweiterte
 Kiosk-Funktionen über den bereits vorhandenen `read_only`-Modus hinaus.
 Geburtstage sind über die Kategorie „Geburtstag“ und den dedizierten
-`sensor.family_planner_next_birthday` bereits nutzbar.
+`sensor.homeroster_next_birthday` bereits nutzbar.
 
 ## Lizenz
 

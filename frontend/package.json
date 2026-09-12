@@ -1,8 +1,8 @@
 {
-  "name": "family-planner-card",
+  "name": "homeroster-card",
   "version": "1.0.0",
   "private": true,
-  "description": "Lokale Familienkalender-Karte für Home Assistant (Family Planner)",
+  "description": "Lokale Familienkalender-Karte für Home Assistant (HomeRoster)",
   "license": "AGPL-3.0-or-later",
   "type": "module",
   "scripts": {

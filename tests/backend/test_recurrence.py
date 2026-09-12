@@ -6,7 +6,7 @@ import datetime as dt
 
 import pytest
 
-from custom_components.family_planner.recurrence import (
+from custom_components.homeroster.recurrence import (
     RRuleValidationError,
     expand_occurrences,
     validate_rrule,

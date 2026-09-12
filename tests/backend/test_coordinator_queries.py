@@ -9,8 +9,8 @@ import pytest
 from freezegun import freeze_time
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.family_planner.const import DOMAIN
-from custom_components.family_planner.coordinator import FamilyPlannerCoordinator
+from custom_components.homeroster.const import DOMAIN
+from custom_components.homeroster.coordinator import HomeRosterCoordinator
 
 UTC = dt.timezone.utc
 
@@ -20,7 +20,7 @@ async def coordinator(hass):
     hass.config.set_time_zone("Europe/Berlin")
     entry = MockConfigEntry(domain=DOMAIN, data={}, options={"require_person": False})
     entry.add_to_hass(hass)
-    coord = FamilyPlannerCoordinator(hass, entry)
+    coord = HomeRosterCoordinator(hass, entry)
     await coord.async_load()
     yield coord
     await coord.async_unload()

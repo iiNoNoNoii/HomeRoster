@@ -1,13 +1,13 @@
 // A minimal, self-contained modal shell (backdrop, Escape-to-close, focus
-// handling) shared by every Family Planner dialog. Deliberately not built on
+// handling) shared by every HomeRoster dialog. Deliberately not built on
 // HA's <ha-dialog> so behaviour is identical in and out of Home Assistant
 // (including in the vitest test environment) and fully within our control
 // for accessibility.
 import { LitElement, css, html, type TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
-@customElement("family-planner-dialog-shell")
-export class FamilyPlannerDialogShell extends LitElement {
+@customElement("homeroster-dialog-shell")
+export class HomeRosterDialogShell extends LitElement {
   static styles = css`
     .backdrop {
       position: fixed;
@@ -136,6 +136,6 @@ export class FamilyPlannerDialogShell extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "family-planner-dialog-shell": FamilyPlannerDialogShell;
+    "homeroster-dialog-shell": HomeRosterDialogShell;
   }
 }

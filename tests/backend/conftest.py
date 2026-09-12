@@ -1,4 +1,4 @@
-"""Shared pytest fixtures for the Family Planner backend test suite."""
+"""Shared pytest fixtures for the HomeRoster backend test suite."""
 
 from __future__ import annotations
 
@@ -22,5 +22,5 @@ pytest_socket._is_unix_socket = lambda family: True  # noqa: SLF001
 
 @pytest.fixture(autouse=True)
 def auto_enable_custom_integrations(enable_custom_integrations):  # noqa: ARG001
-    """Make custom_components/family_planner loadable by Home Assistant's test harness."""
+    """Make custom_components/homeroster loadable by Home Assistant's test harness."""
     yield

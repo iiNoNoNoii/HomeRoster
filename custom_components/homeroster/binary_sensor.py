@@ -11,7 +11,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .compat import DeviceInfo
 from .const import DOMAIN
-from .coordinator import FamilyPlannerCoordinator
+from .coordinator import HomeRosterCoordinator
 from .models import Person
 
 MAX_ACTIVE_ATTR_EVENTS = 25
@@ -20,20 +20,20 @@ MAX_ACTIVE_ATTR_EVENTS = 25
 def _device_info(entry: ConfigEntry) -> DeviceInfo:
     return DeviceInfo(
         identifiers={(DOMAIN, entry.entry_id)},
-        name="Family Planner",
-        manufacturer="Family Planner (lokal, ohne Cloud)",
+        name="HomeRoster",
+        manufacturer="HomeRoster (lokal, ohne Cloud)",
         model="Family Calendar",
     )
 
 
-class FamilyPlannerActiveEventBinarySensor(BinarySensorEntity):
+class HomeRosterActiveEventBinarySensor(BinarySensorEntity):
     """On while at least one event (optionally for one person) is currently running."""
 
     _attr_should_poll = False
     _attr_icon = "mdi:calendar-check"
 
     def __init__(
-        self, coordinator: FamilyPlannerCoordinator, entry: ConfigEntry, person: Person | None
+        self, coordinator: HomeRosterCoordinator, entry: ConfigEntry, person: Person | None
     ) -> None:
         self.coordinator = coordinator
         self._entry = entry
@@ -44,7 +44,7 @@ class FamilyPlannerActiveEventBinarySensor(BinarySensorEntity):
         self._attr_device_info = _device_info(entry)
         # Explicit, locale-independent entity_id (see calendar.py for why).
         slug_suffix = "" if person is None else f"_{person.slug()}"
-        self.entity_id = f"binary_sensor.family_planner_event_active{slug_suffix}"
+        self.entity_id = f"binary_sensor.homeroster_event_active{slug_suffix}"
 
     @property
     def is_on(self) -> bool:
@@ -83,14 +83,14 @@ class _PersonBinarySensorSync:
         self,
         hass: HomeAssistant,
         entry: ConfigEntry,
-        coordinator: FamilyPlannerCoordinator,
+        coordinator: HomeRosterCoordinator,
         async_add_entities: AddEntitiesCallback,
     ) -> None:
         self.hass = hass
         self.entry = entry
         self.coordinator = coordinator
         self.async_add_entities = async_add_entities
-        self.entities: dict[str, FamilyPlannerActiveEventBinarySensor] = {}
+        self.entities: dict[str, HomeRosterActiveEventBinarySensor] = {}
 
     @callback
     def sync(self) -> None:
@@ -104,7 +104,7 @@ class _PersonBinarySensorSync:
                 person = self.coordinator.get_person(person_id)
                 if person is None:
                     continue
-                entity = FamilyPlannerActiveEventBinarySensor(self.coordinator, self.entry, person)
+                entity = HomeRosterActiveEventBinarySensor(self.coordinator, self.entry, person)
                 self.entities[person_id] = entity
                 new_entities.append(entity)
             if new_entities:
@@ -119,15 +119,15 @@ class _PersonBinarySensorSync:
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
-    coordinator: FamilyPlannerCoordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
+    coordinator: HomeRosterCoordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
 
-    entities: list[FamilyPlannerActiveEventBinarySensor] = [
-        FamilyPlannerActiveEventBinarySensor(coordinator, entry, None)
+    entities: list[HomeRosterActiveEventBinarySensor] = [
+        HomeRosterActiveEventBinarySensor(coordinator, entry, None)
     ]
-    per_person: dict[str, FamilyPlannerActiveEventBinarySensor] = {}
+    per_person: dict[str, HomeRosterActiveEventBinarySensor] = {}
     for person in coordinator.get_people():
         if person.active:
-            entity = FamilyPlannerActiveEventBinarySensor(coordinator, entry, person)
+            entity = HomeRosterActiveEventBinarySensor(coordinator, entry, person)
             per_person[person.id] = entity
             entities.append(entity)
 

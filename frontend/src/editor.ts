@@ -3,7 +3,7 @@
 import { LitElement, html, nothing, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import type { HomeAssistant, LovelaceCardConfig, LovelaceCardEditor } from "./ha-types";
-import { DEFAULT_CONFIG, type FamilyPlannerCardConfig } from "./types";
+import { DEFAULT_CONFIG, type HomeRosterCardConfig } from "./types";
 
 const LABELS: Record<string, string> = {
   title: "Titel",
@@ -72,18 +72,18 @@ const SCHEMA = [
   { name: "first_weekday", selector: { select: { options: ["monday", "sunday"], mode: "dropdown" } } },
 ];
 
-@customElement("family-planner-card-editor")
-export class FamilyPlannerCardEditor extends LitElement implements LovelaceCardEditor {
+@customElement("homeroster-card-editor")
+export class HomeRosterCardEditor extends LitElement implements LovelaceCardEditor {
   @property({ attribute: false }) hass?: HomeAssistant;
-  @state() private _config?: FamilyPlannerCardConfig;
+  @state() private _config?: HomeRosterCardConfig;
 
   setConfig(config: LovelaceCardConfig): void {
-    this._config = { ...DEFAULT_CONFIG, ...(config as FamilyPlannerCardConfig), type: config.type };
+    this._config = { ...DEFAULT_CONFIG, ...(config as HomeRosterCardConfig), type: config.type };
   }
 
   private _computeLabel = (schema: { name: string }): string => LABELS[schema.name] ?? schema.name;
 
-  private _valueChanged(e: CustomEvent<{ value: FamilyPlannerCardConfig }>): void {
+  private _valueChanged(e: CustomEvent<{ value: HomeRosterCardConfig }>): void {
     e.stopPropagation();
     this._config = e.detail.value;
     this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: this._config } }));
@@ -107,6 +107,6 @@ export class FamilyPlannerCardEditor extends LitElement implements LovelaceCardE
 
 declare global {
   interface HTMLElementTagNameMap {
-    "family-planner-card-editor": FamilyPlannerCardEditor;
+    "homeroster-card-editor": HomeRosterCardEditor;
   }
 }

@@ -1,5 +1,5 @@
 import type { HomeAssistant } from "../ha-types";
-import type { Category, FamilyEvent, FamilyPlannerCardConfig, Person } from "../types";
+import type { Category, FamilyEvent, HomeRosterCardConfig, Person } from "../types";
 
 export interface ViewCallbacks {
   onEventClick: (event: FamilyEvent) => void;
@@ -9,7 +9,7 @@ export interface ViewCallbacks {
 
 export interface ViewContext {
   hass: HomeAssistant;
-  config: FamilyPlannerCardConfig;
+  config: HomeRosterCardConfig;
   events: FamilyEvent[];
   people: Person[];
   categories: Category[];
@@ -18,7 +18,7 @@ export interface ViewContext {
   firstWeekday: "monday" | "sunday";
   use24h: boolean;
   /** The language to use for all `t()` UI-string lookups: resolved once in
-   * family-planner-card.ts's _buildViewContext() from the integration's
+   * homeroster-card.ts's _buildViewContext() from the integration's
    * `options.language` setting ("auto" | "de" | "en") and the viewer's own
    * `hass.language` (see utils/localize.ts's resolveLanguage()). Views should
    * use this - not `hass.language` - for every `t()` call; `hass.language`/

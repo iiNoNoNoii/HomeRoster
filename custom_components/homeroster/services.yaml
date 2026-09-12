@@ -36,7 +36,7 @@ create_event:
         boolean:
     person_ids:
       name: Personen
-      description: IDs der zugewiesenen Personen (siehe family_planner.get_events oder Personenverwaltung).
+      description: IDs der zugewiesenen Personen (siehe homeroster.get_events oder Personenverwaltung).
       selector:
         text:
           multiple: true

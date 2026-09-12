@@ -25,8 +25,8 @@ from homeassistant.util import dt as dt_util
 
 from .compat import DeviceInfo
 from .const import DOMAIN
-from .coordinator import EventOccurrence, FamilyPlannerCoordinator
-from .models import FamilyPlannerError, Person
+from .coordinator import EventOccurrence, HomeRosterCoordinator
+from .models import HomeRosterError, Person
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -48,8 +48,8 @@ _CALENDAR_EVENT_SUPPORTS_STATUS = "status" in inspect.signature(CalendarEvent).p
 def _device_info(entry: ConfigEntry) -> DeviceInfo:
     return DeviceInfo(
         identifiers={(DOMAIN, entry.entry_id)},
-        name="Family Planner",
-        manufacturer="Family Planner (lokal, ohne Cloud)",
+        name="HomeRoster",
+        manufacturer="HomeRoster (lokal, ohne Cloud)",
         model="Family Calendar",
     )
 
@@ -111,14 +111,14 @@ def _parse_native_event_kwargs(kwargs: dict[str, Any]) -> tuple[str, str, bool]:
     )
 
 
-class FamilyPlannerBaseCalendar(CalendarEntity):
+class HomeRosterBaseCalendar(CalendarEntity):
     """Shared behaviour for the combined and per-person calendars."""
 
     _attr_should_poll = False
 
     def __init__(
         self,
-        coordinator: FamilyPlannerCoordinator,
+        coordinator: HomeRosterCoordinator,
         entry: ConfigEntry,
         person: Person | None,
     ) -> None:
@@ -127,14 +127,12 @@ class FamilyPlannerBaseCalendar(CalendarEntity):
         self._person = person
         suffix = "all" if person is None else person.id
         self._attr_unique_id = f"{entry.entry_id}_{suffix}"
-        self._attr_name = "Family Planner" if person is None else f"Family Planner {person.name}"
+        self._attr_name = "HomeRoster" if person is None else f"HomeRoster {person.name}"
         self._attr_device_info = _device_info(entry)
         # Explicit, locale-independent entity_id: relying on slugify(name)
-        # would make "calendar.family_planner" depend on the UI language.
+        # would make "calendar.homeroster" depend on the UI language.
         self.entity_id = (
-            "calendar.family_planner"
-            if person is None
-            else f"calendar.family_planner_{person.slug()}"
+            "calendar.homeroster" if person is None else f"calendar.homeroster_{person.slug()}"
         )
 
     @property
@@ -165,8 +163,8 @@ class FamilyPlannerBaseCalendar(CalendarEntity):
         self.async_write_ha_state()
 
 
-class FamilyPlannerCalendar(FamilyPlannerBaseCalendar):
-    """The combined calendar.family_planner entity - the primary read/write entity."""
+class HomeRosterCalendar(HomeRosterBaseCalendar):
+    """The combined calendar.homeroster entity - the primary read/write entity."""
 
     _attr_supported_features = (
         CalendarEntityFeature.CREATE_EVENT
@@ -186,7 +184,7 @@ class FamilyPlannerCalendar(FamilyPlannerBaseCalendar):
         }
         try:
             await self.coordinator.async_create_event(data)
-        except FamilyPlannerError as err:
+        except HomeRosterError as err:
             raise HomeAssistantError(str(err)) from err
 
     async def async_delete_event(
@@ -205,7 +203,7 @@ class FamilyPlannerCalendar(FamilyPlannerBaseCalendar):
             await self.coordinator.async_delete_event(
                 uid, mode=mode, occurrence_start=recurrence_id
             )
-        except FamilyPlannerError as err:
+        except HomeRosterError as err:
             raise HomeAssistantError(str(err)) from err
 
     async def async_update_event(
@@ -235,11 +233,11 @@ class FamilyPlannerCalendar(FamilyPlannerBaseCalendar):
         }
         try:
             await self.coordinator.async_update_event(uid, changes)
-        except FamilyPlannerError as err:
+        except HomeRosterError as err:
             raise HomeAssistantError(str(err)) from err
 
 
-class FamilyPlannerPersonCalendar(FamilyPlannerBaseCalendar):
+class HomeRosterPersonCalendar(HomeRosterBaseCalendar):
     """A read-only calendar filtered to a single person's events."""
 
     _attr_supported_features = CalendarEntityFeature(0)
@@ -252,14 +250,14 @@ class _PersonCalendarSync:
         self,
         hass: HomeAssistant,
         entry: ConfigEntry,
-        coordinator: FamilyPlannerCoordinator,
+        coordinator: HomeRosterCoordinator,
         async_add_entities: AddEntitiesCallback,
     ) -> None:
         self.hass = hass
         self.entry = entry
         self.coordinator = coordinator
         self.async_add_entities = async_add_entities
-        self.entities: dict[str, FamilyPlannerPersonCalendar] = {}
+        self.entities: dict[str, HomeRosterPersonCalendar] = {}
 
     @callback
     def sync(self) -> None:
@@ -273,7 +271,7 @@ class _PersonCalendarSync:
                 person = self.coordinator.get_person(person_id)
                 if person is None:
                     continue
-                entity = FamilyPlannerPersonCalendar(self.coordinator, self.entry, person)
+                entity = HomeRosterPersonCalendar(self.coordinator, self.entry, person)
                 self.entities[person_id] = entity
                 new_entities.append(entity)
             if new_entities:
@@ -288,14 +286,14 @@ class _PersonCalendarSync:
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
-    coordinator: FamilyPlannerCoordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
+    coordinator: HomeRosterCoordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
 
-    entities: list[CalendarEntity] = [FamilyPlannerCalendar(coordinator, entry, None)]
+    entities: list[CalendarEntity] = [HomeRosterCalendar(coordinator, entry, None)]
     for person in coordinator.get_people():
         if person.active:
-            entities.append(FamilyPlannerPersonCalendar(coordinator, entry, person))
+            entities.append(HomeRosterPersonCalendar(coordinator, entry, person))
     async_add_entities(entities)
 
     sync = _PersonCalendarSync(hass, entry, coordinator, async_add_entities)
-    sync.entities = {e.person.id: e for e in entities if isinstance(e, FamilyPlannerPersonCalendar)}
+    sync.entities = {e.person.id: e for e in entities if isinstance(e, HomeRosterPersonCalendar)}
     entry.async_on_unload(coordinator.async_add_listener(sync.sync))

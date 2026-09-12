@@ -5,14 +5,14 @@ from __future__ import annotations
 import voluptuous as vol
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.family_planner.config_flow import (
-    FamilyPlannerOptionsFlow,
+from custom_components.homeroster.config_flow import (
+    HomeRosterOptionsFlow,
     _entity_id_to_notify_service,
     _hex_to_rgb,
     _notify_service_to_entity_id,
     _rgb_to_hex,
 )
-from custom_components.family_planner.const import (
+from custom_components.homeroster.const import (
     CONF_DEFAULT_COLORS,
     CONF_DEFAULT_ICONS,
     CONF_DEFAULT_REMINDER_MINUTES,
@@ -45,7 +45,7 @@ async def test_settings_step_defaults_include_new_options(hass):
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
 
-    flow = FamilyPlannerOptionsFlow()
+    flow = HomeRosterOptionsFlow()
     flow.hass = hass
     flow.config_entry = entry
 
@@ -68,7 +68,7 @@ async def test_settings_step_saves_new_options_via_create_entry(hass):
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
 
-    flow = FamilyPlannerOptionsFlow()
+    flow = HomeRosterOptionsFlow()
     flow.hass = hass
     flow.config_entry = entry
 

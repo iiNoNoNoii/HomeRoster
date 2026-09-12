@@ -86,8 +86,8 @@ const STYLES = css`
   }
 `;
 
-@customElement("family-planner-event-detail-dialog")
-export class FamilyPlannerEventDetailDialog extends LitElement {
+@customElement("homeroster-event-detail-dialog")
+export class HomeRosterEventDetailDialog extends LitElement {
   static styles = STYLES;
 
   @property({ attribute: false }) hass!: HomeAssistant;
@@ -114,7 +114,7 @@ export class FamilyPlannerEventDetailDialog extends LitElement {
     const isRecurring = Boolean(event.rrule) || Boolean(event.is_recurring_instance);
 
     return html`
-      <family-planner-dialog-shell .heading=${event.title} @fp-shell-close=${() => this._close()}>
+      <homeroster-dialog-shell .heading=${event.title} @fp-shell-close=${() => this._close()}>
         <div class="meta-row">
           <span class="color-bar" style="background:${color}"></span>
           <div>
@@ -152,7 +152,7 @@ export class FamilyPlannerEventDetailDialog extends LitElement {
           : nothing}
 
         ${this._confirmingDelete ? this._renderDeleteConfirm(lang, isRecurring) : this._renderActions(lang)}
-      </family-planner-dialog-shell>
+      </homeroster-dialog-shell>
     `;
   }
 
@@ -225,6 +225,6 @@ export class FamilyPlannerEventDetailDialog extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "family-planner-event-detail-dialog": FamilyPlannerEventDetailDialog;
+    "homeroster-event-detail-dialog": HomeRosterEventDetailDialog;
   }
 }

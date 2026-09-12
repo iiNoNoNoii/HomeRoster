@@ -1,4 +1,4 @@
-// Shared types mirroring the backend data model (custom_components/family_planner/models.py).
+// Shared types mirroring the backend data model (custom_components/homeroster/models.py).
 
 export interface Person {
   id: string;
@@ -51,7 +51,7 @@ export interface FamilyEvent {
   is_recurring_instance?: boolean;
 }
 
-export interface FamilyPlannerApiErrorPayload {
+export interface HomeRosterApiErrorPayload {
   code: string;
   message: string;
   current?: Record<string, unknown>;
@@ -59,7 +59,7 @@ export interface FamilyPlannerApiErrorPayload {
 
 export type CalendarView = "today" | "day" | "week" | "month" | "agenda";
 
-export interface FamilyPlannerCardConfig {
+export interface HomeRosterCardConfig {
   type: string;
   title?: string;
   entity?: string;
@@ -92,7 +92,7 @@ export interface FamilyPlannerCardConfig {
 }
 
 export const DEFAULT_CONFIG: Required<
-  Omit<FamilyPlannerCardConfig, "type" | "title" | "entity" | "people" | "preselected_people" | "visible_categories" | "height">
+  Omit<HomeRosterCardConfig, "type" | "title" | "entity" | "people" | "preselected_people" | "visible_categories" | "height">
 > = {
   default_view: "week",
   show_filters: true,

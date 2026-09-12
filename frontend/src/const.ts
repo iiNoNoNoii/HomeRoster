@@ -1,10 +1,10 @@
 export const REMINDER_PRESETS: number[] = [0, 5, 15, 30, 60, 1440];
 
-// Fallback defaults used when the backend's `family_planner/config` options
+// Fallback defaults used when the backend's `homeroster/config` options
 // don't (yet) include default_colors / default_icons (older backend, or the
 // options simply not configured). Must match the values documented for the
 // `default_colors` / `default_icons` config options in
-// custom_components/family_planner so behavior is identical either way.
+// custom_components/homeroster so behavior is identical either way.
 export const DEFAULT_COLORS: string[] = [
   "#e53935",
   "#1e88e5",

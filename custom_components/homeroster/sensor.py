@@ -18,7 +18,7 @@ from homeassistant.util import dt as dt_util
 
 from .compat import DeviceInfo
 from .const import DOMAIN, MAX_TODAY_ATTR_EVENTS
-from .coordinator import EventOccurrence, FamilyPlannerCoordinator
+from .coordinator import EventOccurrence, HomeRosterCoordinator
 from .models import Person
 
 BIRTHDAY_CATEGORY_ID = "birthday"
@@ -27,8 +27,8 @@ BIRTHDAY_CATEGORY_ID = "birthday"
 def _device_info(entry: ConfigEntry) -> DeviceInfo:
     return DeviceInfo(
         identifiers={(DOMAIN, entry.entry_id)},
-        name="Family Planner",
-        manufacturer="Family Planner (lokal, ohne Cloud)",
+        name="HomeRoster",
+        manufacturer="HomeRoster (lokal, ohne Cloud)",
         model="Family Calendar",
     )
 
@@ -49,12 +49,12 @@ def _event_summary(occ: EventOccurrence) -> dict[str, Any]:
     }
 
 
-class _FamilyPlannerSensorBase(SensorEntity):
+class _HomeRosterSensorBase(SensorEntity):
     _attr_should_poll = False
 
     def __init__(
         self,
-        coordinator: FamilyPlannerCoordinator,
+        coordinator: HomeRosterCoordinator,
         entry: ConfigEntry,
         key: str,
         name: str,
@@ -69,7 +69,7 @@ class _FamilyPlannerSensorBase(SensorEntity):
         self._attr_device_info = _device_info(entry)
         # Explicit, locale-independent entity_id (see calendar.py for why).
         slug_suffix = "" if person is None else f"_{person.slug()}"
-        self.entity_id = f"sensor.family_planner_{key}{slug_suffix}"
+        self.entity_id = f"sensor.homeroster_{key}{slug_suffix}"
 
     async def async_added_to_hass(self) -> None:
         self.async_on_remove(self.coordinator.async_add_listener(self._handle_coordinator_update))
@@ -79,14 +79,14 @@ class _FamilyPlannerSensorBase(SensorEntity):
         self.async_write_ha_state()
 
 
-class FamilyPlannerEventsTodaySensor(_FamilyPlannerSensorBase):
+class HomeRosterEventsTodaySensor(_HomeRosterSensorBase):
     """Number of events today (optionally filtered to one person)."""
 
     _attr_icon = "mdi:calendar-today"
     _attr_native_unit_of_measurement = "Termine"
 
     def __init__(
-        self, coordinator: FamilyPlannerCoordinator, entry: ConfigEntry, person: Person | None
+        self, coordinator: HomeRosterCoordinator, entry: ConfigEntry, person: Person | None
     ) -> None:
         super().__init__(coordinator, entry, "events_today", "Termine heute", person)
 
@@ -100,13 +100,13 @@ class FamilyPlannerEventsTodaySensor(_FamilyPlannerSensorBase):
         return {"events": [_event_summary(occ) for occ in occurrences[:MAX_TODAY_ATTR_EVENTS]]}
 
 
-class FamilyPlannerEventsTomorrowSensor(_FamilyPlannerSensorBase):
+class HomeRosterEventsTomorrowSensor(_HomeRosterSensorBase):
     """Number of events tomorrow (overall)."""
 
     _attr_icon = "mdi:calendar-arrow-right"
     _attr_native_unit_of_measurement = "Termine"
 
-    def __init__(self, coordinator: FamilyPlannerCoordinator, entry: ConfigEntry) -> None:
+    def __init__(self, coordinator: HomeRosterCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator, entry, "events_tomorrow", "Termine morgen", None)
 
     @property
@@ -119,14 +119,14 @@ class FamilyPlannerEventsTomorrowSensor(_FamilyPlannerSensorBase):
         return len(occurrences)
 
 
-class FamilyPlannerNextEventSensor(_FamilyPlannerSensorBase):
+class HomeRosterNextEventSensor(_HomeRosterSensorBase):
     """The next (or currently active) event, as a timestamp sensor."""
 
     _attr_device_class = SensorDeviceClass.TIMESTAMP
     _attr_icon = "mdi:calendar-clock"
 
     def __init__(
-        self, coordinator: FamilyPlannerCoordinator, entry: ConfigEntry, person: Person | None
+        self, coordinator: HomeRosterCoordinator, entry: ConfigEntry, person: Person | None
     ) -> None:
         super().__init__(coordinator, entry, "next_event", "Nächster Termin", person)
 
@@ -146,13 +146,13 @@ class FamilyPlannerNextEventSensor(_FamilyPlannerSensorBase):
         return _event_summary(occ)
 
 
-class FamilyPlannerNextBirthdaySensor(_FamilyPlannerSensorBase):
+class HomeRosterNextBirthdaySensor(_HomeRosterSensorBase):
     """Next upcoming event in the 'birthday' category, if that category exists."""
 
     _attr_device_class = SensorDeviceClass.TIMESTAMP
     _attr_icon = "mdi:cake-variant"
 
-    def __init__(self, coordinator: FamilyPlannerCoordinator, entry: ConfigEntry) -> None:
+    def __init__(self, coordinator: HomeRosterCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator, entry, "next_birthday", "Nächster Geburtstag", None)
 
     def _occurrence(self) -> EventOccurrence | None:
@@ -186,14 +186,14 @@ class _PersonSensorSync:
         self,
         hass: HomeAssistant,
         entry: ConfigEntry,
-        coordinator: FamilyPlannerCoordinator,
+        coordinator: HomeRosterCoordinator,
         async_add_entities: AddEntitiesCallback,
     ) -> None:
         self.hass = hass
         self.entry = entry
         self.coordinator = coordinator
         self.async_add_entities = async_add_entities
-        self.entities: dict[str, list[_FamilyPlannerSensorBase]] = {}
+        self.entities: dict[str, list[_HomeRosterSensorBase]] = {}
 
     @callback
     def sync(self) -> None:
@@ -202,14 +202,14 @@ class _PersonSensorSync:
 
         new_ids = active_ids - known_ids
         if new_ids:
-            new_entities: list[_FamilyPlannerSensorBase] = []
+            new_entities: list[_HomeRosterSensorBase] = []
             for person_id in new_ids:
                 person = self.coordinator.get_person(person_id)
                 if person is None:
                     continue
                 created = [
-                    FamilyPlannerEventsTodaySensor(self.coordinator, self.entry, person),
-                    FamilyPlannerNextEventSensor(self.coordinator, self.entry, person),
+                    HomeRosterEventsTodaySensor(self.coordinator, self.entry, person),
+                    HomeRosterNextEventSensor(self.coordinator, self.entry, person),
                 ]
                 self.entities[person_id] = created
                 new_entities.extend(created)
@@ -225,20 +225,20 @@ class _PersonSensorSync:
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
-    coordinator: FamilyPlannerCoordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
+    coordinator: HomeRosterCoordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
 
-    entities: list[_FamilyPlannerSensorBase] = [
-        FamilyPlannerEventsTodaySensor(coordinator, entry, None),
-        FamilyPlannerEventsTomorrowSensor(coordinator, entry),
-        FamilyPlannerNextEventSensor(coordinator, entry, None),
-        FamilyPlannerNextBirthdaySensor(coordinator, entry),
+    entities: list[_HomeRosterSensorBase] = [
+        HomeRosterEventsTodaySensor(coordinator, entry, None),
+        HomeRosterEventsTomorrowSensor(coordinator, entry),
+        HomeRosterNextEventSensor(coordinator, entry, None),
+        HomeRosterNextBirthdaySensor(coordinator, entry),
     ]
-    per_person: dict[str, list[_FamilyPlannerSensorBase]] = {}
+    per_person: dict[str, list[_HomeRosterSensorBase]] = {}
     for person in coordinator.get_people():
         if person.active:
             created = [
-                FamilyPlannerEventsTodaySensor(coordinator, entry, person),
-                FamilyPlannerNextEventSensor(coordinator, entry, person),
+                HomeRosterEventsTodaySensor(coordinator, entry, person),
+                HomeRosterNextEventSensor(coordinator, entry, person),
             ]
             per_person[person.id] = created
             entities.extend(created)

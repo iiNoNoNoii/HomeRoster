@@ -1,6 +1,6 @@
-"""WebSocket API used by the Family Planner Lovelace card.
+"""WebSocket API used by the HomeRoster Lovelace card.
 
-All commands live under the ``family_planner/`` namespace. Every command
+All commands live under the ``homeroster/`` namespace. Every command
 runs over Home Assistant's already-authenticated websocket connection - no
 separate unauthenticated HTTP endpoint is exposed. Read commands are
 available to any authenticated user; event mutation depends on the
@@ -19,8 +19,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 
 from .const import CONF_ALLOW_NON_ADMIN_WRITE, DEFAULT_ALLOW_NON_ADMIN_WRITE, DOMAIN
-from .coordinator import EventOccurrence, FamilyPlannerCoordinator
-from .models import ConflictError, FamilyPlannerError
+from .coordinator import EventOccurrence, HomeRosterCoordinator
+from .models import ConflictError, HomeRosterError
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -42,7 +42,7 @@ EVENT_MUTABLE_FIELDS = (
 )
 
 
-def _get_coordinator(hass: HomeAssistant) -> FamilyPlannerCoordinator | None:
+def _get_coordinator(hass: HomeAssistant) -> HomeRosterCoordinator | None:
     domain_data = hass.data.get(DOMAIN)
     if not domain_data:
         return None
@@ -64,8 +64,8 @@ def _send_error(
     connection.send_message({"id": msg_id, "type": "result", "success": False, "error": error})
 
 
-def _handle_family_planner_error(
-    connection: websocket_api.ActiveConnection, msg_id: int, err: FamilyPlannerError
+def _handle_homeroster_error(
+    connection: websocket_api.ActiveConnection, msg_id: int, err: HomeRosterError
 ) -> None:
     extra = {"current": err.current} if isinstance(err, ConflictError) and err.current else None
     _send_error(connection, msg_id, err.code, str(err), extra)
@@ -83,17 +83,17 @@ def _occurrence_dict(occ: EventOccurrence) -> dict[str, Any]:
 
 def _require_coordinator(
     hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg_id: int
-) -> FamilyPlannerCoordinator | None:
+) -> HomeRosterCoordinator | None:
     coordinator = _get_coordinator(hass)
     if coordinator is None:
-        _send_error(connection, msg_id, "not_loaded", "Family Planner ist noch nicht geladen.")
+        _send_error(connection, msg_id, "not_loaded", "HomeRoster ist noch nicht geladen.")
         return None
     return coordinator
 
 
 def _can_write_events(
     hass: HomeAssistant,
-    coordinator: FamilyPlannerCoordinator,
+    coordinator: HomeRosterCoordinator,
     connection: websocket_api.ActiveConnection,
 ) -> bool:
     if connection.user is None:
@@ -108,7 +108,7 @@ def _can_write_events(
 
 def _require_write_permission(
     hass: HomeAssistant,
-    coordinator: FamilyPlannerCoordinator,
+    coordinator: HomeRosterCoordinator,
     connection: websocket_api.ActiveConnection,
     msg_id: int,
 ) -> bool:
@@ -129,7 +129,7 @@ def _require_admin(connection: websocket_api.ActiveConnection, msg_id: int) -> b
 
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "family_planner/config",
+        vol.Required("type"): "homeroster/config",
     }
 )
 @websocket_api.async_response
@@ -152,7 +152,7 @@ async def ws_get_config(
 
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "family_planner/events/get",
+        vol.Required("type"): "homeroster/events/get",
         vol.Required("start"): str,
         vol.Required("end"): str,
         vol.Optional("person_ids"): [str],
@@ -188,7 +188,7 @@ async def ws_get_events(
 
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "family_planner/events/create",
+        vol.Required("type"): "homeroster/events/create",
         vol.Required("title"): str,
         vol.Optional("subtitle"): vol.Any(str, None),
         vol.Required("start"): str,
@@ -218,15 +218,15 @@ async def ws_create_event(
     try:
         created_by = connection.user.id if connection.user else None
         event = await coordinator.async_create_event(data, created_by=created_by)
-    except FamilyPlannerError as err:
-        _handle_family_planner_error(connection, msg["id"], err)
+    except HomeRosterError as err:
+        _handle_homeroster_error(connection, msg["id"], err)
         return
     connection.send_result(msg["id"], {"event": event.to_dict()})
 
 
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "family_planner/events/update",
+        vol.Required("type"): "homeroster/events/update",
         vol.Required("event_id"): str,
         vol.Optional("expected_version"): int,
         vol.Optional("title"): str,
@@ -260,15 +260,15 @@ async def ws_update_event(
         event = await coordinator.async_update_event(
             msg["event_id"], changes, expected_version=msg.get("expected_version")
         )
-    except FamilyPlannerError as err:
-        _handle_family_planner_error(connection, msg["id"], err)
+    except HomeRosterError as err:
+        _handle_homeroster_error(connection, msg["id"], err)
         return
     connection.send_result(msg["id"], {"event": event.to_dict()})
 
 
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "family_planner/events/delete",
+        vol.Required("type"): "homeroster/events/delete",
         vol.Required("event_id"): str,
         vol.Optional("mode", default="series"): vol.In(["series", "instance"]),
         vol.Optional("occurrence_start"): str,
@@ -289,15 +289,15 @@ async def ws_delete_event(
             mode=msg.get("mode", "series"),
             occurrence_start=msg.get("occurrence_start"),
         )
-    except FamilyPlannerError as err:
-        _handle_family_planner_error(connection, msg["id"], err)
+    except HomeRosterError as err:
+        _handle_homeroster_error(connection, msg["id"], err)
         return
     connection.send_result(msg["id"], {"deleted": True})
 
 
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "family_planner/events/duplicate",
+        vol.Required("type"): "homeroster/events/duplicate",
         vol.Required("event_id"): str,
         vol.Optional("start"): str,
         vol.Optional("end"): str,
@@ -316,15 +316,15 @@ async def ws_duplicate_event(
         event = await coordinator.async_duplicate_event(
             msg["event_id"], start_override=msg.get("start"), end_override=msg.get("end")
         )
-    except FamilyPlannerError as err:
-        _handle_family_planner_error(connection, msg["id"], err)
+    except HomeRosterError as err:
+        _handle_homeroster_error(connection, msg["id"], err)
         return
     connection.send_result(msg["id"], {"event": event.to_dict()})
 
 
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "family_planner/next_event",
+        vol.Required("type"): "homeroster/next_event",
         vol.Optional("person_id"): str,
     }
 )
@@ -341,7 +341,7 @@ async def ws_next_event(
 
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "family_planner/today_events",
+        vol.Required("type"): "homeroster/today_events",
         vol.Optional("person_id"): str,
     }
 )
@@ -361,7 +361,7 @@ async def ws_today_events(
 # ----------------------------------------------------------------------
 
 
-@websocket_api.websocket_command({vol.Required("type"): "family_planner/people/list"})
+@websocket_api.websocket_command({vol.Required("type"): "homeroster/people/list"})
 @websocket_api.async_response
 async def ws_people_list(
     hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
@@ -374,7 +374,7 @@ async def ws_people_list(
 
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "family_planner/people/create",
+        vol.Required("type"): "homeroster/people/create",
         vol.Required("name"): str,
         vol.Required("color"): str,
         vol.Optional("icon"): vol.Any(str, None),
@@ -394,15 +394,15 @@ async def ws_people_create(
     data = {k: v for k, v in msg.items() if k not in ("id", "type")}
     try:
         person = await coordinator.async_create_person(data)
-    except FamilyPlannerError as err:
-        _handle_family_planner_error(connection, msg["id"], err)
+    except HomeRosterError as err:
+        _handle_homeroster_error(connection, msg["id"], err)
         return
     connection.send_result(msg["id"], {"person": person.to_dict()})
 
 
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "family_planner/people/update",
+        vol.Required("type"): "homeroster/people/update",
         vol.Required("person_id"): str,
         vol.Optional("name"): str,
         vol.Optional("color"): str,
@@ -423,15 +423,15 @@ async def ws_people_update(
     changes = {k: v for k, v in msg.items() if k not in ("id", "type", "person_id")}
     try:
         person = await coordinator.async_update_person(msg["person_id"], changes)
-    except FamilyPlannerError as err:
-        _handle_family_planner_error(connection, msg["id"], err)
+    except HomeRosterError as err:
+        _handle_homeroster_error(connection, msg["id"], err)
         return
     connection.send_result(msg["id"], {"person": person.to_dict()})
 
 
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "family_planner/people/delete",
+        vol.Required("type"): "homeroster/people/delete",
         vol.Required("person_id"): str,
         vol.Required("strategy"): vol.In(
             ["deactivate", "remove_from_events", "reassign", "keep_unassigned"]
@@ -450,15 +450,15 @@ async def ws_people_delete(
         await coordinator.async_delete_person(
             msg["person_id"], msg["strategy"], msg.get("reassign_to")
         )
-    except FamilyPlannerError as err:
-        _handle_family_planner_error(connection, msg["id"], err)
+    except HomeRosterError as err:
+        _handle_homeroster_error(connection, msg["id"], err)
         return
     connection.send_result(msg["id"], {"deleted": True})
 
 
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "family_planner/people/reorder",
+        vol.Required("type"): "homeroster/people/reorder",
         vol.Required("ordered_ids"): [str],
     }
 )
@@ -478,7 +478,7 @@ async def ws_people_reorder(
 # ----------------------------------------------------------------------
 
 
-@websocket_api.websocket_command({vol.Required("type"): "family_planner/categories/list"})
+@websocket_api.websocket_command({vol.Required("type"): "homeroster/categories/list"})
 @websocket_api.async_response
 async def ws_categories_list(
     hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
@@ -493,7 +493,7 @@ async def ws_categories_list(
 
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "family_planner/categories/create",
+        vol.Required("type"): "homeroster/categories/create",
         vol.Required("name"): str,
         vol.Required("color"): str,
         vol.Optional("icon"): vol.Any(str, None),
@@ -510,15 +510,15 @@ async def ws_categories_create(
     data = {k: v for k, v in msg.items() if k not in ("id", "type")}
     try:
         category = await coordinator.async_create_category(data)
-    except FamilyPlannerError as err:
-        _handle_family_planner_error(connection, msg["id"], err)
+    except HomeRosterError as err:
+        _handle_homeroster_error(connection, msg["id"], err)
         return
     connection.send_result(msg["id"], {"category": category.to_dict()})
 
 
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "family_planner/categories/update",
+        vol.Required("type"): "homeroster/categories/update",
         vol.Required("category_id"): str,
         vol.Optional("name"): str,
         vol.Optional("color"): str,
@@ -536,15 +536,15 @@ async def ws_categories_update(
     changes = {k: v for k, v in msg.items() if k not in ("id", "type", "category_id")}
     try:
         category = await coordinator.async_update_category(msg["category_id"], changes)
-    except FamilyPlannerError as err:
-        _handle_family_planner_error(connection, msg["id"], err)
+    except HomeRosterError as err:
+        _handle_homeroster_error(connection, msg["id"], err)
         return
     connection.send_result(msg["id"], {"category": category.to_dict()})
 
 
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "family_planner/categories/delete",
+        vol.Required("type"): "homeroster/categories/delete",
         vol.Required("category_id"): str,
     }
 )
@@ -557,15 +557,15 @@ async def ws_categories_delete(
         return
     try:
         await coordinator.async_delete_category(msg["category_id"])
-    except FamilyPlannerError as err:
-        _handle_family_planner_error(connection, msg["id"], err)
+    except HomeRosterError as err:
+        _handle_homeroster_error(connection, msg["id"], err)
         return
     connection.send_result(msg["id"], {"deleted": True})
 
 
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "family_planner/categories/reorder",
+        vol.Required("type"): "homeroster/categories/reorder",
         vol.Required("ordered_ids"): [str],
     }
 )
@@ -587,7 +587,7 @@ async def ws_categories_reorder(
 # ----------------------------------------------------------------------
 
 
-@websocket_api.websocket_command({vol.Required("type"): "family_planner/export_json"})
+@websocket_api.websocket_command({vol.Required("type"): "homeroster/export_json"})
 @websocket_api.async_response
 async def ws_export_json(
     hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
@@ -600,7 +600,7 @@ async def ws_export_json(
 
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "family_planner/import_json",
+        vol.Required("type"): "homeroster/import_json",
         vol.Required("payload"): dict,
         vol.Optional("conflict_strategy", default="skip"): vol.In(["skip", "replace", "duplicate"]),
     }
@@ -616,8 +616,8 @@ async def ws_import_json(
         result = await coordinator.async_import_json(
             msg["payload"], msg.get("conflict_strategy", "skip")
         )
-    except FamilyPlannerError as err:
-        _handle_family_planner_error(connection, msg["id"], err)
+    except HomeRosterError as err:
+        _handle_homeroster_error(connection, msg["id"], err)
         return
     connection.send_result(msg["id"], result)
 
@@ -647,7 +647,7 @@ _COMMANDS = (
 
 
 def async_register_websocket_commands(hass: HomeAssistant) -> None:
-    """Register all family_planner/* websocket commands (idempotent)."""
+    """Register all homeroster/* websocket commands (idempotent)."""
     if hass.data.get(f"{DOMAIN}_ws_registered"):
         return
     for command in _COMMANDS:

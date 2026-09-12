@@ -1,16 +1,16 @@
-# Example automations for Family Planner.
+# Example automations for HomeRoster.
 # This file is meant to be copied from (Settings -> Automations -> Edit
 # automation -> YAML mode), not included directly.
 # Every example uses only actions/events this integration actually
 # provides (see services.yaml and the README).
 
 # 1) Send a summary of today's events every morning at 07:00.
-- alias: "Family Planner - Morning summary"
+- alias: "HomeRoster - Morning summary"
   trigger:
     - trigger: time
       at: "07:00:00"
   action:
-    - action: family_planner.get_today_events
+    - action: homeroster.get_today_events
       response_variable: today
     - variables:
         count: "{{ today.events | count }}"
@@ -29,13 +29,13 @@
 # 2) Notify 30 minutes before a specific person's event.
 #    Requirement: the event has the "30 minutes before" reminder set (edit
 #    event -> Reminders). The integration itself never sends notifications
-#    - it only fires family_planner_reminder_due; filtering by person and
+#    - it only fires homeroster_reminder_due; filtering by person and
 #    the actual notification are handled by this automation. Replace "anna"
 #    with the real person ID (see people management in the card).
-- alias: "Family Planner - Reminder 30 minutes before (Anna)"
+- alias: "HomeRoster - Reminder 30 minutes before (Anna)"
   trigger:
     - trigger: event
-      event_type: family_planner_reminder_due
+      event_type: homeroster_reminder_due
   condition:
     - condition: template
       value_template: "{{ 'anna' in trigger.event.data.person_ids }}"
@@ -49,13 +49,13 @@
 
 # 3) React to newly created or changed events (e.g. a logbook entry,
 #    refreshing a dashboard, text-to-speech).
-- alias: "Family Planner - React to event changes"
+- alias: "HomeRoster - React to event changes"
   trigger:
     - trigger: event
-      event_type: family_planner_event_created
+      event_type: homeroster_event_created
       id: created
     - trigger: event
-      event_type: family_planner_event_updated
+      event_type: homeroster_event_updated
       id: updated
   action:
     - action: logbook.log
@@ -66,16 +66,16 @@
           {{ 'created' if trigger.id == 'created' else 'updated' }}.
 
 # 4) Briefly turn on an LED as a hint whenever any event starts.
-#    The family_planner_event_started event only carries person IDs, not
+#    The homeroster_event_started event only carries person IDs, not
 #    colors. For an LED in the assigned person's own color, create one
 #    input_text helper per person holding their hex color (e.g.
 #    input_text.person_color_<person_id>) and fill it in once when you
 #    create the person - Home Assistant itself has no built-in
-#    person-ID-to-color lookup outside the Family Planner API.
-- alias: "Family Planner - LED on event start"
+#    person-ID-to-color lookup outside the HomeRoster API.
+- alias: "HomeRoster - LED on event start"
   trigger:
     - trigger: event
-      event_type: family_planner_event_started
+      event_type: homeroster_event_started
   action:
     - action: light.turn_on
       target:
@@ -84,12 +84,12 @@
         color_name: white
 
 # 5) Automatically set an event's status to "done" once it ends.
-- alias: "Family Planner - Automatically mark as done"
+- alias: "HomeRoster - Automatically mark as done"
   trigger:
     - trigger: event
-      event_type: family_planner_event_ended
+      event_type: homeroster_event_ended
   action:
-    - action: family_planner.set_event_status
+    - action: homeroster.set_event_status
       data:
         event_id: "{{ trigger.event.data.event_id }}"
         status: done

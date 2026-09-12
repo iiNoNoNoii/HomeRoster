@@ -13,13 +13,13 @@ from homeassistant.const import __version__ as HA_VERSION
 from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN
-from .coordinator import FamilyPlannerCoordinator
+from .coordinator import HomeRosterCoordinator
 
 
 async def async_get_config_entry_diagnostics(
     hass: HomeAssistant, entry: ConfigEntry
 ) -> dict[str, Any]:
-    coordinator: FamilyPlannerCoordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
+    coordinator: HomeRosterCoordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
     return {
         "home_assistant_version": HA_VERSION,
         "integration_version": "1.0.0",

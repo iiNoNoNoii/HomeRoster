@@ -1,10 +1,10 @@
 *[Deutsche Version](README.de.md)*
 
-# Family Planner
+# HomeRoster
 
 A fully **local** digital family calendar for Home Assistant – no cloud
 service, no external account, no internet connection needed for normal
-operation. Family Planner consists of a custom integration (Python) as the
+operation. HomeRoster consists of a custom integration (Python) as the
 backend and its own Lovelace card (TypeScript/Lit) as the frontend.
 
 > **No Google Calendar, no iCloud, no vendor cloud service required.** All
@@ -112,14 +112,14 @@ repository:
 2. Add this project's repository URL
    (`https://github.com/iiNoNoNoii/HomeRoster`), choose category
    **Integration**, and add it.
-3. Search for "Family Planner" in HACS and install it.
+3. Search for "HomeRoster" in HACS and install it.
 4. Restart Home Assistant.
 
 ### Manual
 
-1. Copy this repository's `custom_components/family_planner` folder to
-   `<config>/custom_components/family_planner`.
-2. Make sure `custom_components/family_planner/www/family-planner-card.js`
+1. Copy this repository's `custom_components/homeroster` folder to
+   `<config>/custom_components/homeroster`.
+2. Make sure `custom_components/homeroster/www/homeroster-card.js`
    is present (it's already built and included in the repository; see
    [Development](#development) if you want to rebuild the card yourself).
 3. Restart Home Assistant.
@@ -127,15 +127,15 @@ repository:
 ## Setup
 
 1. **Settings → Devices & Services → Add Integration** → search for
-   "Family Planner" → set it up. No account and no external sign-in is
+   "HomeRoster" → set it up. No account and no external sign-in is
    required.
 2. The integration registers the Lovelace card automatically (via
    `add_extra_js_url`) – in general, **you don't need to add a Lovelace
    resource manually**. The exact URL contains a cache-busting hash and
    changes with every card update (e.g.
-   `/family_planner_static/family-planner-card-<hash>.js`); the currently
+   `/homeroster_static/homeroster-card-<hash>.js`); the currently
    registered URL is logged to the Home Assistant log (an INFO message
-   "Family Planner: Lovelace card successfully registered at …") and shown
+   "HomeRoster: Lovelace card successfully registered at …") and shown
    under **Settings → Dashboards → Resources**. If the card still doesn't
    show up in the card picker, add it there manually with exactly that
    URL, type "JavaScript Module".
@@ -146,7 +146,7 @@ repository:
 Basic admin settings (e.g. whether at least one person per event is
 required, whether non-administrators are allowed to edit events, the card
 language, or whether reminders are also sent via the Home Assistant app)
-are found under **Settings → Devices & Services → Family Planner →
+are found under **Settings → Devices & Services → HomeRoster →
 Configure**. There you can also create, edit, reorder, disable and delete
 people and categories without the card being loaded – this is the
 frontend-independent fallback path; day to day, managing people/categories
@@ -155,9 +155,9 @@ directly in the card is more convenient.
 ## Card configuration
 
 ```yaml
-type: custom:family-planner-card
+type: custom:homeroster-card
 title: Familienkalender
-entity: calendar.family_planner
+entity: calendar.homeroster
 default_view: week
 people:
   - anna
@@ -224,7 +224,7 @@ single calendar week. The day/"Today" view itself is unchanged: still an
 hour-by-hour time grid for a single day.
 
 **Card language:** The integration option "Card language" (**Settings →
-Devices & Services → Family Planner → Configure → General settings**) lets
+Devices & Services → HomeRoster → Configure → General settings**) lets
 you pin the card's language to German or English, regardless of each
 individual viewer's own Home Assistant language setting. The default,
 "Automatic", still follows the language of whichever user is currently
@@ -303,7 +303,7 @@ a silently wrong result.
 
 Events can store multiple reminder offsets (at start time, 5/15/30/60
 minutes before, 1 day before, or a freely chosen number of minutes). The
-integration fires the `family_planner_reminder_due` event when a reminder
+integration fires the `homeroster_reminder_due` event when a reminder
 is due, which an automation then evaluates (see [Automation
 examples](#automation-examples)); this fully decouples delivery (mobile
 app, TTS, lights, …) from the calendar.
@@ -311,10 +311,10 @@ app, TTS, lights, …) from the calendar.
 Optionally, the integration can also deliver reminders automatically as a
 push notification via the Home Assistant Companion App. Via the
 integration option **"Send reminders via the Home Assistant app"**
-(**Settings → Devices & Services → Family Planner → Configure**, default:
+(**Settings → Devices & Services → HomeRoster → Configure**, default:
 on), the integration automatically calls the `notify.*` service configured
 for each assigned person, at that person's configured reminder time – in
-addition to (not instead of) the `family_planner_reminder_due` event, so
+addition to (not instead of) the `homeroster_reminder_due` event, so
 existing custom automations keep working unchanged. This requires **both**
 conditions to be true: the global option is enabled, **and** that specific
 person has a notification target configured (see [People
@@ -328,7 +328,7 @@ Behavior in edge cases:
 | Situation | Behavior |
 | --- | --- |
 | Restart shortly before a reminder | The reminder is checked and fired normally after startup, as soon as the first check tick runs (default: every 30s). |
-| Restart while an event is in progress | `family_planner_event_started` is fired retroactively on the first tick after startup, provided the event is still active at that point; the "active" sensors show the correct state immediately after loading. |
+| Restart while an event is in progress | `homeroster_event_started` is fired retroactively on the first tick after startup, provided the event is still active at that point; the "active" sensors show the correct state immediately after loading. |
 | Editing an event | The set of already-fired reminders stays bound to the (event ID, instance, offset) combination; changing the time/offsets can make the same reminder become due again. |
 | Deleting an event | Pending, not-yet-fired reminders simply lapse. |
 | Daylight saving time change | All internal time comparisons run in UTC; the local timezone is only used for display and for all-day events – DST changes never shift reminder times. |
@@ -341,43 +341,43 @@ so the storage file doesn't grow indefinitely.
 
 **Calendar entities**
 
-- `calendar.family_planner` – all events; supports creating/editing/
+- `calendar.homeroster` – all events; supports creating/editing/
   deleting via the native `calendar.create_event` / `calendar.update_event`
   / `calendar.delete_event` action.
-- `calendar.family_planner_<person>` – a read-only calendar filtered by
+- `calendar.homeroster_<person>` – a read-only calendar filtered by
   person, one per active person (entity ID derived from the person's name,
-  e.g. `calendar.family_planner_anna`).
+  e.g. `calendar.homeroster_anna`).
 
 **Sensors**
 
-- `sensor.family_planner_events_today` / `..._today_<person>` – count
+- `sensor.homeroster_events_today` / `..._today_<person>` – count
   (state) and list (the `events` attribute, capped at 20) of today's
   events.
-- `sensor.family_planner_events_tomorrow` – count of tomorrow's events.
-- `sensor.family_planner_next_event` / `..._next_event_<person>` – a
+- `sensor.homeroster_events_tomorrow` – count of tomorrow's events.
+- `sensor.homeroster_next_event` / `..._next_event_<person>` – a
   timestamp sensor; state = the ISO timestamp of the next (or currently
   running) event, or "unknown"; attributes include title, location,
   people, category.
-- `sensor.family_planner_next_birthday` – the next event in the
+- `sensor.homeroster_next_birthday` – the next event in the
   "Birthday" category, if any.
-- `binary_sensor.family_planner_event_active` /
+- `binary_sensor.homeroster_event_active` /
   `..._event_active_<person>` – on as long as at least one (non-cancelled)
   event is currently active.
 
 Sensors update only on actual changes (event created/changed/deleted,
 start/end transitions, day changes) – not on a per-second basis.
 
-**Services/actions** (domain `family_planner`; see `services.yaml` for
+**Services/actions** (domain `homeroster`; see `services.yaml` for
 all fields and selectors):
 
 `create_event`, `update_event`, `delete_event`, `get_events`,
 `get_today_events`, `get_next_event`, `duplicate_event`,
 `set_event_status`.
 
-**Events on the event bus:** `family_planner_event_created`,
-`family_planner_event_updated`, `family_planner_event_deleted`,
-`family_planner_event_started`, `family_planner_event_ended`,
-`family_planner_reminder_due`. Every payload contains at least `event_id`,
+**Events on the event bus:** `homeroster_event_created`,
+`homeroster_event_updated`, `homeroster_event_deleted`,
+`homeroster_event_started`, `homeroster_event_ended`,
+`homeroster_reminder_due`. Every payload contains at least `event_id`,
 `title`, `start`, `end`, `all_day`, `person_ids` – deliberately without
 description/location, so as not to spread unnecessary content across the
 event bus.
@@ -388,29 +388,29 @@ Complete, copy-ready examples are in
 [`docs/automations.yaml`](docs/automations.yaml):
 
 1. A 07:00 summary of today's events via
-   `family_planner.get_today_events` + a notification.
+   `homeroster.get_today_events` + a notification.
 2. A reminder 30 minutes before an event for a specific person, via
-   `family_planner_reminder_due`.
+   `homeroster_reminder_due`.
 3. Reacting to newly created/changed events (a logbook entry).
-4. An LED hint when an event starts (`family_planner_event_started`).
+4. An LED hint when an event starts (`homeroster_event_started`).
 5. Automatically marking an event done when it ends
-   (`family_planner_event_ended` + `family_planner.set_event_status`).
+   (`homeroster_event_ended` + `homeroster.set_event_status`).
 
 Template examples for dashboard text (see also
 [`docs/dashboards.yaml`](docs/dashboards.yaml)):
 
 ```jinja2
-Heute stehen {{ states('sensor.family_planner_events_today') }} Termine an.
+Heute stehen {{ states('sensor.homeroster_events_today') }} Termine an.
 ```
 
 ```jinja2
-{% set next = states.sensor.family_planner_next_event %}
+{% set next = states.sensor.homeroster_next_event %}
 Der nächste Termin ist {{ next.attributes.title }} um
 {{ as_timestamp(next.state) | timestamp_custom('%H:%M', true) }} Uhr.
 ```
 
 ```jinja2
-{% if states('sensor.family_planner_events_today_mia') | int(0) == 0 %}
+{% if states('sensor.homeroster_events_today_mia') | int(0) == 0 %}
 Mia hat heute keine Termine.
 {% endif %}
 ```
@@ -418,7 +418,7 @@ Mia hat heute keine Termine.
 Querying all events between two points in time (e.g. in a script):
 
 ```yaml
-- action: family_planner.get_events
+- action: homeroster.get_events
   data:
     start: "2026-09-20T00:00:00+02:00"
     end: "2026-09-27T00:00:00+02:00"
@@ -435,13 +435,13 @@ event" tile and a per-person tile.
 
 ## Backup, import and export
 
-All data lives under `<config>/.storage/family_planner_<entry_id>`, so
+All data lives under `<config>/.storage/homeroster_<entry_id>`, so
 it's automatically part of every regular Home Assistant backup.
 
 In addition, the card (for administrators) offers **JSON export** and
 **JSON import** via the people-management/settings dialogs, or directly
-via the WebSocket actions `family_planner/export_json` and
-`family_planner/import_json`:
+via the WebSocket actions `homeroster/export_json` and
+`homeroster/import_json`:
 
 - Export produces people, categories and events as a single JSON
   document.
@@ -484,7 +484,7 @@ pretend otherwise.
 
 ## Diagnostics
 
-**Settings → Devices & Services → Family Planner → Download diagnostics**
+**Settings → Devices & Services → HomeRoster → Download diagnostics**
 provides only metadata: integration version, schema version, number of
 people/categories/events, earliest/latest event date, last storage error,
 migration status. **No** event titles, descriptions, locations or person
@@ -514,9 +514,9 @@ names are exported.
 
 | Problem | Solution |
 | --- | --- |
-| Browser console shows `Uncaught (in promise) Error: Custom element not found: family-planner-card` | The card was not (or is no longer) loaded by the browser. Causes, in order of likelihood: **(1)** The integration was installed/updated before this version, when `http` wasn't yet declared as a `dependencies` entry in `manifest.json` – fully restart Home Assistant (not just reload the integration) so `hass.http` is guaranteed to be available by setup time. **(2)** An already-open browser tab missed the registration, because `add_extra_js_url` only takes effect when the frontend's start page (re)loads – hard-refresh the tab (Ctrl/Cmd+Shift+R) or reopen the dashboard. **(3)** `custom_components/family_planner/www/family-planner-card.js` is missing or corrupted – search the Home Assistant log for `Family Planner`: a WARNING line points to a missing file, an ERROR line (with a full traceback) to an unexpected registration failure; in both cases the backend/sensors/calendar keep working normally regardless. A successful registration is logged as an INFO line with the actually-used URL. |
+| Browser console shows `Uncaught (in promise) Error: Custom element not found: homeroster-card` | The card was not (or is no longer) loaded by the browser. Causes, in order of likelihood: **(1)** The integration was installed/updated before this version, when `http` wasn't yet declared as a `dependencies` entry in `manifest.json` – fully restart Home Assistant (not just reload the integration) so `hass.http` is guaranteed to be available by setup time. **(2)** An already-open browser tab missed the registration, because `add_extra_js_url` only takes effect when the frontend's start page (re)loads – hard-refresh the tab (Ctrl/Cmd+Shift+R) or reopen the dashboard. **(3)** `custom_components/homeroster/www/homeroster-card.js` is missing or corrupted – search the Home Assistant log for `HomeRoster`: a WARNING line points to a missing file, an ERROR line (with a full traceback) to an unexpected registration failure; in both cases the backend/sensors/calendar keep working normally regardless. A successful registration is logged as an INFO line with the actually-used URL. |
 | The card doesn't show up in the card picker | Add the resource manually (see [Setup](#setup)); then clear the browser cache/reload the dashboard. |
-| The card shows "Family Planner is still loading…" | The integration hasn't finished starting up yet; wait a moment. If it persists, check the Home Assistant log for setup errors in `family_planner`. |
+| The card shows "HomeRoster is still loading…" | The integration hasn't finished starting up yet; wait a moment. If it persists, check the Home Assistant log for setup errors in `homeroster`. |
 | A "Connection to Home Assistant lost" banner | The card automatically detects WebSocket disconnects and reloads events once the connection is restored; no action needed. |
 | Saving fails / a conflict message appears | Another device changed the same event in the meantime (optimistic locking via a version number). Reload the event and make your change again. |
 | "This Home Assistant version is older than 2024.10.0" in the log | Update Home Assistant; the backend/sensors still work, only the automatic card registration is skipped. |
@@ -526,7 +526,7 @@ names are exported.
 
 The storage format is versioned (`STORAGE_VERSION_MAJOR` /
 `STORAGE_VERSION_MINOR` in `const.py`). Future data-model changes are
-migrated via `FamilyPlannerStore._async_migrate_func` (`storage.py`); a
+migrated via `HomeRosterStore._async_migrate_func` (`storage.py`); a
 version jump to a **newer** major version than the installed integration
 understands is refused in a controlled way, instead of silently
 corrupting data. As always, a regular Home Assistant backup is recommended
@@ -536,7 +536,7 @@ before major updates.
 
 ### Before publishing
 
-`custom_components/family_planner/manifest.json`'s `codeowners`,
+`custom_components/homeroster/manifest.json`'s `codeowners`,
 `documentation` and `issue_tracker` already point at the real repository
 (`iiNoNoNoii/HomeRoster`). `.github/workflows/` runs HACS/hassfest
 validation and the backend test suite on every push and pull request. An
@@ -547,9 +547,9 @@ that's not required for private use as a custom HACS repository.
 ### Repository structure
 
 ```text
-family-planner/
-├── custom_components/family_planner/   # Backend (Python)
-│   ├── www/family-planner-card.js      # Pre-built card (see below)
+homeroster/
+├── custom_components/homeroster/   # Backend (Python)
+│   ├── www/homeroster-card.js      # Pre-built card (see below)
 │   └── ...
 ├── frontend/                           # Frontend source (TypeScript/Lit)
 ├── tests/backend/                      # pytest (backend)
@@ -570,15 +570,15 @@ custom-component tests.
 ```bash
 cd frontend
 npm install
-npm run build      # -> frontend/dist/family-planner-card.js
+npm run build      # -> frontend/dist/homeroster-card.js
 ```
 
 After every change, the built file also needs to be copied to
-`custom_components/family_planner/www/family-planner-card.js` (the
+`custom_components/homeroster/www/homeroster-card.js` (the
 repository already includes an up-to-date build):
 
 ```bash
-cp frontend/dist/family-planner-card.js custom_components/family_planner/www/
+cp frontend/dist/homeroster-card.js custom_components/homeroster/www/
 ```
 
 `npm run watch` automatically rebuilds on changes (unminified, with a
@@ -627,7 +627,7 @@ validation via the real WebSocket API (`hass_ws_client`).
 > yields exactly the same test results.
 
 Backend quality: full type annotations, `ruff` for linting/formatting
-(`ruff check custom_components/family_planner tests/backend`,
+(`ruff check custom_components/homeroster tests/backend`,
 `ruff format ...`), exclusively async, non-blocking code per Home
 Assistant conventions.
 
@@ -646,7 +646,7 @@ Assistant conventions.
       covered by unit tests).
 - [x] An event can be opened, edited and deleted.
 - [x] All-day and multi-day events work correctly (DST-safe, see tests).
-- [x] `calendar.family_planner` can be used in Home Assistant automations.
+- [x] `calendar.homeroster` can be used in Home Assistant automations.
 - [x] The next event can be retrieved via an entity or an action.
 - [x] Today's events can be retrieved via an entity or an action.
 - [x] Another dashboard card can display the next event (see
@@ -679,7 +679,7 @@ limitations](#known-limitations)).
 finer-grained permissions beyond administrator/user, voice assistant
 integration, kiosk features beyond the existing `read_only` mode.
 Birthdays are already usable via the "Birthday" category and the dedicated
-`sensor.family_planner_next_birthday`.
+`sensor.homeroster_next_birthday`.
 
 ## License
 

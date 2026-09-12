@@ -1,13 +1,13 @@
-# Example dashboard configurations for Family Planner.
+# Example dashboard configurations for HomeRoster.
 # Copy into a Lovelace view (UI editor -> Add card -> "Manual", or a
 # view's YAML mode).
 
 # -----------------------------------------------------------------------
 # Main family calendar (see the README for all options)
 # -----------------------------------------------------------------------
-- type: custom:family-planner-card
+- type: custom:homeroster-card
   title: Family calendar
-  entity: calendar.family_planner
+  entity: calendar.homeroster
   default_view: week
   show_filters: true
   show_search: true
@@ -22,12 +22,12 @@
 
 # -----------------------------------------------------------------------
 # 1) "Today" tile: count + next events, tap opens the calendar.
-#    Uses sensor.family_planner_events_today (state + "events" attribute).
+#    Uses sensor.homeroster_events_today (state + "events" attribute).
 # -----------------------------------------------------------------------
 - type: markdown
   title: Today
   content: >-
-    {% set today = states.sensor.family_planner_events_today %}
+    {% set today = states.sensor.homeroster_events_today %}
     **{{ today.state }} event(s) today**
 
 
@@ -40,11 +40,11 @@
 
 # -----------------------------------------------------------------------
 # 2) "Next event" tile: title, relative time, people, category icon.
-#    Uses the native tile card with sensor.family_planner_next_event
+#    Uses the native tile card with sensor.homeroster_next_event
 #    (the "timestamp" device class automatically shows a relative time).
 # -----------------------------------------------------------------------
 - type: tile
-  entity: sensor.family_planner_next_event
+  entity: sensor.homeroster_next_event
   name: Next event
   icon: mdi:calendar-clock
   state_content:
@@ -56,7 +56,7 @@
 
 - type: markdown
   content: >-
-    {% set next = states.sensor.family_planner_next_event %}
+    {% set next = states.sensor.homeroster_next_event %}
     {% if next.state in ['unknown', 'unavailable'] %}
     No further events planned.
     {% else %}
@@ -74,8 +74,8 @@
 - type: markdown
   title: Anna
   content: >-
-    {% set today = states('sensor.family_planner_events_today_anna') %}
-    {% set next = states.sensor.family_planner_next_event_anna %}
+    {% set today = states('sensor.homeroster_events_today_anna') %}
+    {% set next = states.sensor.homeroster_next_event_anna %}
     **{{ today }} event(s) today**
 
     {% if next.state not in ['unknown', 'unavailable'] %}
@@ -89,9 +89,9 @@
     navigation_path: /lovelace/family-calendar
 
 # -----------------------------------------------------------------------
-# Example: active event as a tile (binary_sensor.family_planner_event_active)
+# Example: active event as a tile (binary_sensor.homeroster_event_active)
 # -----------------------------------------------------------------------
 - type: tile
-  entity: binary_sensor.family_planner_event_active
+  entity: binary_sensor.homeroster_event_active
   name: Event in progress
   icon: mdi:calendar-check

@@ -95,8 +95,8 @@ interface DraftPerson {
 
 const EMPTY_DRAFT: DraftPerson = { id: null, name: "", color: "#3f51b5", role: "" };
 
-@customElement("family-planner-people-manager-dialog")
-export class FamilyPlannerPeopleManagerDialog extends LitElement {
+@customElement("homeroster-people-manager-dialog")
+export class HomeRosterPeopleManagerDialog extends LitElement {
   static styles = [STYLES, SWATCH_STYLES];
 
   @property({ attribute: false }) hass!: HomeAssistant;
@@ -182,7 +182,7 @@ export class FamilyPlannerPeopleManagerDialog extends LitElement {
     const lang = resolveLanguage(this.language, this.hass?.language ?? "auto");
     const sorted = [...this.people].sort((a, b) => a.sort_order - b.sort_order);
     return html`
-      <family-planner-dialog-shell .heading=${t(lang, "people.title")} @fp-shell-close=${() => this._close()}>
+      <homeroster-dialog-shell .heading=${t(lang, "people.title")} @fp-shell-close=${() => this._close()}>
         ${this._error ? html`<div class="confirm-box">${this._error}</div>` : nothing}
         ${sorted.map(
           (person, index) => html`
@@ -254,7 +254,7 @@ export class FamilyPlannerPeopleManagerDialog extends LitElement {
               </button>`
             : nothing}
         </div>
-      </family-planner-dialog-shell>
+      </homeroster-dialog-shell>
     `;
   }
 
@@ -293,6 +293,6 @@ export class FamilyPlannerPeopleManagerDialog extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "family-planner-people-manager-dialog": FamilyPlannerPeopleManagerDialog;
+    "homeroster-people-manager-dialog": HomeRosterPeopleManagerDialog;
   }
 }
