@@ -2,6 +2,7 @@ import { LitElement, html, nothing, type TemplateResult } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import * as api from "./api";
 import { CARD_STYLES } from "./styles";
+import { DEFAULT_COLORS, DEFAULT_ICONS, DEFAULT_REMINDER_MINUTES } from "./const";
 import {
   addDays,
   resolveFirstWeekday,
@@ -60,6 +61,9 @@ export class FamilyPlannerCard extends LitElement {
   @state() private _requirePerson = true;
   @state() private _enableCategories = true;
   @state() private _enableStatus = true;
+  @state() private _defaultReminderMinutes = DEFAULT_REMINDER_MINUTES;
+  @state() private _defaultColors: string[] = DEFAULT_COLORS;
+  @state() private _defaultIcons: string[] = DEFAULT_ICONS;
 
   @state() private _createDraft: { date: string; time: string; allDay: boolean } | null = null;
   @state() private _editingEvent: FamilyEvent | null = null;
@@ -151,6 +155,25 @@ export class FamilyPlannerCard extends LitElement {
       this._requirePerson = Boolean(cfg.options.require_person ?? true);
       this._enableCategories = Boolean(cfg.options.enable_categories ?? true);
       this._enableStatus = Boolean(cfg.options.enable_status ?? true);
+      const reminderOpt = cfg.options.default_reminder_minutes;
+      this._defaultReminderMinutes =
+        typeof reminderOpt === "number" && Number.isFinite(reminderOpt) ? reminderOpt : DEFAULT_REMINDER_MINUTES;
+      const colorsOpt = cfg.options.default_colors;
+      this._defaultColors =
+        typeof colorsOpt === "string" && colorsOpt.trim()
+          ? colorsOpt
+              .split(",")
+              .map((c) => c.trim())
+              .filter(Boolean)
+          : DEFAULT_COLORS;
+      const iconsOpt = cfg.options.default_icons;
+      this._defaultIcons =
+        typeof iconsOpt === "string" && iconsOpt.trim()
+          ? iconsOpt
+              .split(",")
+              .map((i) => i.trim())
+              .filter(Boolean)
+          : DEFAULT_ICONS;
       this._people = people;
       this._categories = categories;
       this._error = null;
@@ -644,6 +667,9 @@ export class FamilyPlannerCard extends LitElement {
               .requirePerson=${this._requirePerson}
               .enableCategories=${this._enableCategories}
               .enableStatus=${this._enableStatus}
+              .defaultReminderMinutes=${this._defaultReminderMinutes}
+              .defaultColors=${this._defaultColors}
+              .defaultIcons=${this._defaultIcons}
               @fp-save=${(e: CustomEvent) => void this._handleDialogSave(e)}
               @fp-close=${() => this._closeEventDialog()}
             ></family-planner-event-dialog>
@@ -692,6 +718,7 @@ export class FamilyPlannerCard extends LitElement {
             <family-planner-people-manager-dialog
               .hass=${this._hass}
               .people=${this._people}
+              .defaultColors=${this._defaultColors}
               @fp-people-changed=${() => void this._refreshPeople()}
               @fp-close=${() => (this._peopleManagerOpen = false)}
             ></family-planner-people-manager-dialog>
@@ -702,6 +729,8 @@ export class FamilyPlannerCard extends LitElement {
             <family-planner-category-manager-dialog
               .hass=${this._hass}
               .categories=${this._categories}
+              .defaultColors=${this._defaultColors}
+              .defaultIcons=${this._defaultIcons}
               @fp-categories-changed=${() => void this._refreshCategories()}
               @fp-close=${() => (this._categoryManagerOpen = false)}
             ></family-planner-category-manager-dialog>

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import logging
 from pathlib import Path
 from typing import Any
@@ -55,7 +56,7 @@ _LOGGER = logging.getLogger(__name__)
 
 WWW_PATH = Path(__file__).parent / "www"
 CARD_JS_FILENAME = "family-planner-card.js"
-CARD_URL_PATH = f"/family_planner_static/{CARD_JS_FILENAME}"
+CARD_URL_BASE = "/family_planner_static"
 
 _EVENT_FIELDS_SCHEMA = {
     vol.Optional(ATTR_SUBTITLE): vol.Any(str, None),
@@ -267,6 +268,19 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
 
 
 async def _async_register_frontend(hass: HomeAssistant) -> None:
+    # "http" is declared in manifest.json's `dependencies`, so hass.http is
+    # guaranteed to exist by the time this runs. "frontend" (needed for
+    # add_extra_js_url below) is deliberately *not* declared there: it is a
+    # system integration that's part of every normal HA bootstrap (via
+    # default_config) and therefore always finishes setup long before any
+    # config entry - including ours - is loaded, so redeclaring it here would
+    # be redundant in practice. It would also pull in frontend's full
+    # dependency chain (onboarding -> analytics/person -> recorder, etc.)
+    # which is unnecessarily heavy and not what actually protects against
+    # the "Custom element not found" bug. The one theoretical gap (a
+    # headless HA instance without frontend loaded at all) is handled by the
+    # broad except-and-log around the call to this function in
+    # async_setup_entry, so it degrades gracefully instead of crashing setup.
     if hass.data.get(f"{DOMAIN}_frontend_registered"):
         return
     card_file = WWW_PATH / CARD_JS_FILENAME
@@ -285,11 +299,25 @@ async def _async_register_frontend(hass: HomeAssistant) -> None:
     # while async_setup_entry itself still requires >=2024.10 to function.
     from homeassistant.components.http import StaticPathConfig
 
+    # Cache-bust via a content hash embedded in the URL itself (no query
+    # string, since add_extra_js_url loads this as a JS module and some
+    # browsers/HA frontend tooling do not reliably re-fetch module URLs that
+    # only differ by "?v=..."). `cache_headers=False` only stops Home
+    # Assistant from attaching its own long-lived (1 month) Cache-Control
+    # header - it does not send "no-cache" either, so without this a browser
+    # can still keep serving a stale/broken bundle from a previous version
+    # under the same URL. Hashing the content means an updated bundle is
+    # always served under a brand-new URL, so a stale cache entry can never
+    # collide with it.
+    content_hash = hashlib.sha256(card_file.read_bytes()).hexdigest()[:10]
+    url_path = f"{CARD_URL_BASE}/family-planner-card-{content_hash}.js"
+
     await hass.http.async_register_static_paths(
-        [StaticPathConfig(CARD_URL_PATH, str(card_file), cache_headers=False)]
+        [StaticPathConfig(url_path, str(card_file), cache_headers=False)]
     )
-    add_extra_js_url(hass, CARD_URL_PATH)
+    add_extra_js_url(hass, url_path)
     hass.data[f"{DOMAIN}_frontend_registered"] = True
+    _LOGGER.info("Family Planner: Lovelace-Karte erfolgreich unter %s registriert.", url_path)
 
 
 async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
@@ -326,6 +354,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             "werden - diese Home-Assistant-Version ist älter als %s. Bitte Home Assistant "
             "aktualisieren; Backend, Sensoren und Automationen funktionieren unabhängig davon.",
             "2024.10.0",
+        )
+    except Exception:  # noqa: BLE001 - frontend registration must never break entry setup
+        _LOGGER.exception(
+            "Family Planner: Unerwarteter Fehler bei der Registrierung der Lovelace-Karte "
+            "(www/%s). Backend, Sensoren, Kalender und Automationen funktionieren unabhängig "
+            "davon weiter; bitte diesen Fehler im Home-Assistant-Log prüfen.",
+            CARD_JS_FILENAME,
         )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)

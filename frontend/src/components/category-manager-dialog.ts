@@ -7,7 +7,9 @@ import "./dialog-shell";
 import * as api from "../api";
 import type { HomeAssistant } from "../ha-types";
 import type { Category } from "../types";
+import { DEFAULT_COLORS, DEFAULT_ICONS } from "../const";
 import { t } from "../utils/localize";
+import { renderColorSwatches, renderIconSwatches, SWATCH_STYLES } from "../utils/swatches";
 
 const STYLES = css`
   .row {
@@ -86,16 +88,19 @@ interface DraftCategory {
   id: string | null;
   name: string;
   color: string;
+  icon: string;
 }
 
-const EMPTY_DRAFT: DraftCategory = { id: null, name: "", color: "#9e9e9e" };
+const EMPTY_DRAFT: DraftCategory = { id: null, name: "", color: "#9e9e9e", icon: "" };
 
 @customElement("family-planner-category-manager-dialog")
 export class FamilyPlannerCategoryManagerDialog extends LitElement {
-  static styles = STYLES;
+  static styles = [STYLES, SWATCH_STYLES];
 
   @property({ attribute: false }) hass!: HomeAssistant;
   @property({ attribute: false }) categories: Category[] = [];
+  @property({ attribute: false }) defaultColors: string[] = DEFAULT_COLORS;
+  @property({ attribute: false }) defaultIcons: string[] = DEFAULT_ICONS;
 
   @state() private _draft: DraftCategory = { ...EMPTY_DRAFT };
   @state() private _deletingId: string | null = null;
@@ -110,10 +115,15 @@ export class FamilyPlannerCategoryManagerDialog extends LitElement {
       return;
     }
     try {
+      const icon = this._draft.icon.trim() || null;
       if (this._draft.id) {
-        await api.updateCategory(this.hass, this._draft.id, { name: this._draft.name.trim(), color: this._draft.color });
+        await api.updateCategory(this.hass, this._draft.id, {
+          name: this._draft.name.trim(),
+          color: this._draft.color,
+          icon,
+        });
       } else {
-        await api.createCategory(this.hass, { name: this._draft.name.trim(), color: this._draft.color });
+        await api.createCategory(this.hass, { name: this._draft.name.trim(), color: this._draft.color, icon });
       }
       this._draft = { ...EMPTY_DRAFT };
       this._error = null;
@@ -164,6 +174,7 @@ export class FamilyPlannerCategoryManagerDialog extends LitElement {
           (category, index) => html`
             <div class="row">
               <span class="dot" style="background:${category.color}"></span>
+              ${category.icon ? html`<ha-icon icon=${category.icon}></ha-icon>` : nothing}
               <span class="name ${category.active ? "" : "inactive"}">${category.name}</span>
               <button class="iconbtn" title="↑" ?disabled=${index === 0} @click=${() => this._move(category, -1)}>
                 <ha-icon icon="mdi:arrow-up"></ha-icon>
@@ -182,7 +193,13 @@ export class FamilyPlannerCategoryManagerDialog extends LitElement {
               <button
                 class="iconbtn"
                 title=${t(lang, "action.edit")}
-                @click=${() => (this._draft = { id: category.id, name: category.name, color: category.color })}
+                @click=${() =>
+                  (this._draft = {
+                    id: category.id,
+                    name: category.name,
+                    color: category.color,
+                    icon: category.icon ?? "",
+                  })}
               >
                 <ha-icon icon="mdi:pencil"></ha-icon>
               </button>
@@ -218,6 +235,22 @@ export class FamilyPlannerCategoryManagerDialog extends LitElement {
             .value=${this._draft.color}
             @input=${(e: Event) => (this._draft = { ...this._draft, color: (e.target as HTMLInputElement).value })}
           />
+          ${renderColorSwatches(
+            this.defaultColors,
+            this._draft.color,
+            (c) => (this._draft = { ...this._draft, color: c })
+          )}
+          <input
+            type="text"
+            placeholder=${t(lang, "event.icon")}
+            .value=${this._draft.icon}
+            @input=${(e: Event) => (this._draft = { ...this._draft, icon: (e.target as HTMLInputElement).value })}
+          />
+          ${renderIconSwatches(
+            this.defaultIcons,
+            this._draft.icon,
+            (i) => (this._draft = { ...this._draft, icon: i })
+          )}
           <button class="btn btn-primary" type="button" @click=${() => void this._save()}>
             ${this._draft.id ? t(lang, "action.save") : t(lang, "category.add")}
           </button>

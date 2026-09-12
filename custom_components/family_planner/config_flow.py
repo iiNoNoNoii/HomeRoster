@@ -18,6 +18,9 @@ from .const import (
     ACTION_MOVE_DOWN,
     ACTION_MOVE_UP,
     CONF_ALLOW_NON_ADMIN_WRITE,
+    CONF_DEFAULT_COLORS,
+    CONF_DEFAULT_ICONS,
+    CONF_DEFAULT_REMINDER_MINUTES,
     CONF_ENABLE_CATEGORIES,
     CONF_ENABLE_STATUS,
     CONF_FIRST_WEEKDAY,
@@ -25,9 +28,12 @@ from .const import (
     CONF_REQUIRE_PERSON,
     CONF_TODAY_SENSOR_LIMIT,
     DEFAULT_ALLOW_NON_ADMIN_WRITE,
+    DEFAULT_COLORS,
     DEFAULT_ENABLE_CATEGORIES,
     DEFAULT_ENABLE_STATUS,
     DEFAULT_FIRST_WEEKDAY,
+    DEFAULT_ICONS,
+    DEFAULT_REMINDER_MINUTES,
     DEFAULT_REMINDER_TICK_SECONDS,
     DEFAULT_REQUIRE_PERSON,
     DEFAULT_TODAY_SENSOR_LIMIT,
@@ -90,6 +96,29 @@ _FIRST_WEEKDAY_SELECTOR = selector.SelectSelector(
         mode=selector.SelectSelectorMode.DROPDOWN,
     )
 )
+
+_DEFAULT_PERSON_COLOR = "#3f51b5"
+
+
+def _hex_to_rgb(hex_color: str | None) -> list[int]:
+    """Convert a "#rrggbb" hex string to an [r, g, b] list (0-255 each).
+
+    Falls back to _DEFAULT_PERSON_COLOR's RGB value for anything that isn't
+    a well-formed 6-digit hex color.
+    """
+    value = (hex_color or "").lstrip("#")
+    if len(value) != 6:
+        value = _DEFAULT_PERSON_COLOR.lstrip("#")
+    try:
+        return [int(value[i : i + 2], 16) for i in (0, 2, 4)]
+    except ValueError:
+        return [int(_DEFAULT_PERSON_COLOR.lstrip("#")[i : i + 2], 16) for i in (0, 2, 4)]
+
+
+def _rgb_to_hex(rgb: list[int] | tuple[int, int, int]) -> str:
+    """Convert an [r, g, b] list/tuple (0-255 each) to a "#rrggbb" hex string."""
+    r, g, b = (max(0, min(255, int(component))) for component in rgb)
+    return f"#{r:02x}{g:02x}{b:02x}"
 
 
 class FamilyPlannerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -177,6 +206,18 @@ class FamilyPlannerOptionsFlow(config_entries.OptionsFlow):
                     CONF_REMINDER_TICK_SECONDS,
                     default=options.get(CONF_REMINDER_TICK_SECONDS, DEFAULT_REMINDER_TICK_SECONDS),
                 ): vol.All(int, vol.Range(min=10, max=300)),
+                vol.Required(
+                    CONF_DEFAULT_REMINDER_MINUTES,
+                    default=options.get(CONF_DEFAULT_REMINDER_MINUTES, DEFAULT_REMINDER_MINUTES),
+                ): vol.All(int, vol.Range(min=0, max=10080)),
+                vol.Required(
+                    CONF_DEFAULT_COLORS,
+                    default=options.get(CONF_DEFAULT_COLORS, DEFAULT_COLORS),
+                ): str,
+                vol.Required(
+                    CONF_DEFAULT_ICONS,
+                    default=options.get(CONF_DEFAULT_ICONS, DEFAULT_ICONS),
+                ): str,
             }
         )
         if user_input is not None:
@@ -199,9 +240,21 @@ class FamilyPlannerOptionsFlow(config_entries.OptionsFlow):
         people = coordinator.get_people()
         errors: dict[str, str] = {}
 
+        # Best-effort prefill for the color picker: ColorRGBSelector always
+        # returns a value (it has no "blank" state like the old text field),
+        # so on a redisplay after a validation error - where user_input
+        # already names the person being edited - show that person's real
+        # current color rather than resetting the swatch to the app default.
+        color_default_hex = _DEFAULT_PERSON_COLOR
+        if user_input is not None and user_input.get("person_id"):
+            selected_person = coordinator.get_person(user_input["person_id"])
+            if selected_person is not None:
+                color_default_hex = selected_person.color
+
         if user_input is not None:
             action = user_input["action"]
             person_id = user_input.get("person_id")
+            color_rgb = user_input.get("color")
             try:
                 if action == ACTION_ADD:
                     if not user_input.get("name"):
@@ -209,7 +262,7 @@ class FamilyPlannerOptionsFlow(config_entries.OptionsFlow):
                     await coordinator.async_create_person(
                         {
                             "name": user_input["name"],
-                            "color": user_input.get("color") or "#3f51b5",
+                            "color": _rgb_to_hex(color_rgb) if color_rgb else "#3f51b5",
                             "role": user_input.get("role"),
                         }
                     )
@@ -220,8 +273,8 @@ class FamilyPlannerOptionsFlow(config_entries.OptionsFlow):
                     changes: dict[str, Any] = {}
                     if user_input.get("name"):
                         changes["name"] = user_input["name"]
-                    if user_input.get("color"):
-                        changes["color"] = user_input["color"]
+                    if color_rgb:
+                        changes["color"] = _rgb_to_hex(color_rgb)
                     if user_input.get("role"):
                         changes["role"] = user_input["role"]
                     await coordinator.async_update_person(person_id, changes)
@@ -255,7 +308,9 @@ class FamilyPlannerOptionsFlow(config_entries.OptionsFlow):
                 ),
                 vol.Optional("person_id"): vol.In(person_choices) if person_choices else str,
                 vol.Optional("name", default=""): str,
-                vol.Optional("color", default=""): str,
+                vol.Optional(
+                    "color", default=_hex_to_rgb(color_default_hex)
+                ): selector.ColorRGBSelector(),
                 vol.Optional("role"): _ROLE_SELECTOR,
             }
         )

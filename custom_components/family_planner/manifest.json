@@ -3,7 +3,7 @@
   "name": "Family Planner",
   "codeowners": ["@your-github-username"],
   "config_flow": true,
-  "dependencies": [],
+  "dependencies": ["http"],
   "documentation": "https://github.com/your-github-username/family-planner",
   "issue_tracker": "https://github.com/your-github-username/family-planner/issues",
   "integration_type": "hub",

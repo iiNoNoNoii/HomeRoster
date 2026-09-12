@@ -20,11 +20,34 @@ export function toIsoWithOffset(d: Date): string {
   );
 }
 
-export function combineLocalDateTime(date: string, time: string): string {
+function localDateTime(date: string, time: string): Date {
   const [h, m] = (time || "00:00").split(":").map(Number);
   const [y, mo, da] = date.split("-").map(Number);
-  const d = new Date(y, (mo || 1) - 1, da || 1, h || 0, m || 0, 0);
-  return toIsoWithOffset(d);
+  return new Date(y, (mo || 1) - 1, da || 1, h || 0, m || 0, 0);
+}
+
+export function combineLocalDateTime(date: string, time: string): string {
+  return toIsoWithOffset(localDateTime(date, time));
+}
+
+/** Formats a Date as a "HH:MM" string suitable for an <input type="time"> value. */
+export function toTimeInput(d: Date): string {
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+/** Computes the date/time `offsetMinutes` after the given local start
+ * date/time, formatted for <input type="date"> / <input type="time">
+ * values. Correctly rolls the date forward (or further) when the offset
+ * crosses one or more midnights, e.g. a 23:30 start with a 60 minute
+ * offset lands on 00:30 the next day rather than an invalid time. */
+export function computeEndFromStart(
+  startDate: string,
+  startTime: string,
+  offsetMinutes: number
+): { date: string; time: string } {
+  const end = localDateTime(startDate, startTime);
+  end.setMinutes(end.getMinutes() + offsetMinutes);
+  return { date: dateOnly(end), time: toTimeInput(end) };
 }
 
 /** Shifts a YYYY-MM-DD string by `days`, using local noon internally so a

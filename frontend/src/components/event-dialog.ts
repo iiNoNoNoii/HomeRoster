@@ -6,10 +6,11 @@ import "./dialog-shell";
 import type { EventCreateInput, EventUpdateInput } from "../api";
 import type { HomeAssistant } from "../ha-types";
 import type { Category, EventStatus, FamilyEvent, FamilyPlannerCardConfig, Person } from "../types";
-import { REMINDER_PRESETS } from "../const";
-import { combineLocalDateTime, shiftDateString } from "../utils/datetime";
+import { DEFAULT_COLORS, DEFAULT_ICONS, DEFAULT_REMINDER_MINUTES, REMINDER_PRESETS } from "../const";
+import { combineLocalDateTime, computeEndFromStart, dateOnly, shiftDateString, toTimeInput } from "../utils/datetime";
 import { t } from "../utils/localize";
 import { validateEventForm, type ValidationResult } from "../utils/validation";
+import { renderColorSwatches, renderIconSwatches, SWATCH_STYLES } from "../utils/swatches";
 
 const FORM_STYLES = css`
   .field {
@@ -136,7 +137,7 @@ const FORM_STYLES = css`
 
 @customElement("family-planner-event-dialog")
 export class FamilyPlannerEventDialog extends LitElement {
-  static styles = FORM_STYLES;
+  static styles = [FORM_STYLES, SWATCH_STYLES];
 
   @property({ attribute: false }) hass!: HomeAssistant;
   @property({ attribute: false }) config!: FamilyPlannerCardConfig;
@@ -148,6 +149,9 @@ export class FamilyPlannerEventDialog extends LitElement {
   @property({ type: Boolean }) requirePerson = true;
   @property({ type: Boolean }) enableCategories = true;
   @property({ type: Boolean }) enableStatus = true;
+  @property({ type: Number }) defaultReminderMinutes = DEFAULT_REMINDER_MINUTES;
+  @property({ attribute: false }) defaultColors: string[] = DEFAULT_COLORS;
+  @property({ attribute: false }) defaultIcons: string[] = DEFAULT_ICONS;
 
   @state() private _title = "";
   @state() private _subtitle = "";
@@ -173,6 +177,14 @@ export class FamilyPlannerEventDialog extends LitElement {
 
   private _dirty = false;
   private _initialized = false;
+  // Whether the user has deliberately edited the end date/time themselves.
+  // While false, the end date/time auto-follows the start (same day,
+  // +1h) as the user edits the start fields. New events start out
+  // false (nothing deliberate has been set yet); editing an existing
+  // event starts out true, since that event's stored end was deliberately
+  // set (possibly to a different duration) and editing the start should
+  // not silently overwrite it.
+  private _endTouchedByUser = false;
 
   protected willUpdate(changed: PropertyValues): void {
     if (!this._initialized && (this.event || this.prefill)) {
@@ -194,11 +206,14 @@ export class FamilyPlannerEventDialog extends LitElement {
       } else {
         const start = new Date(e.start);
         const end = new Date(e.end);
-        this._startDate = toDateInput(start);
+        this._startDate = dateOnly(start);
         this._startTime = toTimeInput(start);
-        this._endDate = toDateInput(end);
+        this._endDate = dateOnly(end);
         this._endTime = toTimeInput(end);
       }
+      // The stored end was deliberately set (possibly to a duration other
+      // than +1h) - don't let editing the start silently overwrite it.
+      this._endTouchedByUser = true;
       this._personIds = [...e.person_ids];
       this._description = e.description ?? "";
       this._location = e.location ?? "";
@@ -219,14 +234,26 @@ export class FamilyPlannerEventDialog extends LitElement {
     } else if (this.prefill) {
       this._allDay = this.prefill.allDay;
       this._startDate = this.prefill.date;
-      this._endDate = this.prefill.date;
       this._startTime = this.prefill.time;
-      const [h, m] = this.prefill.time.split(":").map(Number);
-      const endDate = new Date(2000, 0, 1, h, m);
-      endDate.setMinutes(endDate.getMinutes() + 60);
-      this._endTime = toTimeInput(endDate);
+      // Brand-new event: nothing deliberate has been set for the end yet,
+      // so let it auto-follow the start (same day, +1h).
+      this._endTouchedByUser = false;
+      this._recomputeEndIfNotTouched();
       this._personIds = [];
+      this._reminders = [this.defaultReminderMinutes];
     }
+  }
+
+  /** Recomputes the end date/time as start+1h (same day, rolling to the
+   * next day if that crosses midnight) unless the user has deliberately
+   * edited the end fields themselves - see `_endTouchedByUser`. */
+  private _recomputeEndIfNotTouched(): void {
+    if (this._endTouchedByUser) {
+      return;
+    }
+    const { date, time } = computeEndFromStart(this._startDate, this._startTime, 60);
+    this._endDate = date;
+    this._endTime = time;
   }
 
   private _markDirty(): void {
@@ -405,6 +432,7 @@ export class FamilyPlannerEventDialog extends LitElement {
             .value=${this._startDate}
             @input=${(e: Event) => {
               this._startDate = (e.target as HTMLInputElement).value;
+              this._recomputeEndIfNotTouched();
               this._markDirty();
             }}
           />
@@ -419,6 +447,7 @@ export class FamilyPlannerEventDialog extends LitElement {
                   .value=${this._startTime}
                   @input=${(e: Event) => {
                     this._startTime = (e.target as HTMLInputElement).value;
+                    this._recomputeEndIfNotTouched();
                     this._markDirty();
                   }}
                 />
@@ -434,6 +463,7 @@ export class FamilyPlannerEventDialog extends LitElement {
             type="date"
             .value=${this._endDate}
             @input=${(e: Event) => {
+              this._endTouchedByUser = true;
               this._endDate = (e.target as HTMLInputElement).value;
               this._markDirty();
             }}
@@ -448,6 +478,7 @@ export class FamilyPlannerEventDialog extends LitElement {
                   type="time"
                   .value=${this._endTime}
                   @input=${(e: Event) => {
+                    this._endTouchedByUser = true;
                     this._endTime = (e.target as HTMLInputElement).value;
                     this._markDirty();
                   }}
@@ -538,6 +569,10 @@ export class FamilyPlannerEventDialog extends LitElement {
               this._markDirty();
             }}
           />
+          ${renderColorSwatches(this.defaultColors, this._color, (c) => {
+            this._color = c;
+            this._markDirty();
+          })}
         </div>
         <div class="field">
           <label for="fp-icon">${t(lang, "event.icon")}</label>
@@ -551,6 +586,10 @@ export class FamilyPlannerEventDialog extends LitElement {
               this._markDirty();
             }}
           />
+          ${renderIconSwatches(this.defaultIcons, this._icon, (i) => {
+            this._icon = i;
+            this._markDirty();
+          })}
         </div>
       </div>
 
@@ -637,16 +676,6 @@ export class FamilyPlannerEventDialog extends LitElement {
       </div>
     `;
   }
-}
-
-function toDateInput(d: Date): string {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-
-function toTimeInput(d: Date): string {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 declare global {

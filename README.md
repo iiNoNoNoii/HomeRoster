@@ -117,10 +117,14 @@ du eigene Screenshots für dein Repository:
    Anmeldung benötigt.
 2. Die Integration registriert die Lovelace-Karte automatisch (über
    `add_extra_js_url`) – in der Regel ist **kein manuelles Hinzufügen einer
-   Lovelace-Ressource nötig**. Erscheint die Karte trotzdem nicht im
-   Karten-Picker, füge sie manuell hinzu:
-   **Einstellungen → Dashboards → Ressourcen → Ressource hinzufügen**,
-   URL `/family_planner_static/family-planner-card.js`, Typ „JavaScript-Modul“.
+   Lovelace-Ressource nötig**. Die genaue URL enthält einen Cache-Busting-Hash
+   und wechselt bei jedem Update der Karte (z. B.
+   `/family_planner_static/family-planner-card-<hash>.js`); die aktuell
+   registrierte URL steht im Home-Assistant-Log (INFO-Meldung „Family
+   Planner: Lovelace-Karte erfolgreich unter … registriert“) sowie unter
+   **Einstellungen → Dashboards → Ressourcen**. Erscheint die Karte trotzdem
+   nicht im Karten-Picker, füge sie dort manuell mit genau dieser URL hinzu,
+   Typ „JavaScript-Modul“.
 3. Über **Personen verwalten**/**Kategorien verwalten** in der Karte (oder
    in den Integrationsoptionen, siehe unten) erste Familienmitglieder
    anlegen.
@@ -443,6 +447,7 @@ Termintitel, Beschreibungen, Orte oder Personennamen werden exportiert.
 
 | Problem | Lösung |
 | --- | --- |
+| Browser-Konsole zeigt `Uncaught (in promise) Error: Custom element not found: family-planner-card` | Die Karte wurde vom Browser nicht (mehr) geladen. Ursachen in der Reihenfolge ihrer Wahrscheinlichkeit: **(1)** Integration wurde vor dieser Version installiert/aktualisiert, als `http` noch nicht als `dependencies` in `manifest.json` deklariert war – Home Assistant vollständig neu starten (nicht nur die Integration neu laden), damit `hass.http` beim Setup garantiert schon bereitsteht. **(2)** Ein bereits offener Browser-Tab hat die Registrierung verpasst, weil `add_extra_js_url` nur beim (Neu-)Laden der Frontend-Startseite wirkt – Tab mit Hard-Refresh neu laden (Strg/Cmd+Shift+R) oder Dashboard neu öffnen. **(3)** `custom_components/family_planner/www/family-planner-card.js` fehlt oder ist beschädigt – Home-Assistant-Log nach `Family Planner` durchsuchen: eine WARNING-Zeile weist auf eine fehlende Datei hin, eine ERROR-Zeile (mit vollem Traceback) auf einen unerwarteten Fehler bei der Registrierung; in beiden Fällen laufen Backend/Sensoren/Kalender trotzdem normal weiter. Eine erfolgreiche Registrierung wird als INFO-Zeile mit der tatsächlich verwendeten URL geloggt. |
 | Karte erscheint nicht im Karten-Picker | Ressource manuell hinzufügen (siehe [Einrichtung](#einrichtung)); danach Browser-Cache leeren/Dashboard neu laden. |
 | Karte zeigt „Family Planner wird noch geladen…“ | Integration ist noch nicht vollständig gestartet; kurz warten. Bleibt der Zustand bestehen, Home-Assistant-Log auf Fehler beim Setup von `family_planner` prüfen. |
 | „Verbindung zu Home Assistant verloren“-Banner | Die Karte erkennt WebSocket-Verbindungsabbrüche automatisch und lädt Termine nach Wiederherstellung der Verbindung neu; keine Aktion nötig. |
@@ -615,4 +620,8 @@ Geburtstage sind über die Kategorie „Geburtstag“ und den dedizierten
 
 ## Lizenz
 
-MIT, siehe [LICENSE](LICENSE).
+GNU Affero General Public License v3.0 (AGPL-3.0), siehe [LICENSE](LICENSE).
+Wird eine modifizierte Version über ein Netzwerk (z. B. als Teil einer
+Home-Assistant-Instanz) bereitgestellt, muss der Quellcode dieser
+modifizierten Version den Nutzern zugänglich gemacht werden (siehe
+Abschnitt 13 der Lizenz).

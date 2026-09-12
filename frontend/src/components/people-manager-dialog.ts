@@ -8,7 +8,9 @@ import "./dialog-shell";
 import * as api from "../api";
 import type { HomeAssistant } from "../ha-types";
 import type { Person } from "../types";
+import { DEFAULT_COLORS } from "../const";
 import { t } from "../utils/localize";
+import { renderColorSwatches, SWATCH_STYLES } from "../utils/swatches";
 
 const STYLES = css`
   .row {
@@ -95,10 +97,11 @@ const EMPTY_DRAFT: DraftPerson = { id: null, name: "", color: "#3f51b5", role: "
 
 @customElement("family-planner-people-manager-dialog")
 export class FamilyPlannerPeopleManagerDialog extends LitElement {
-  static styles = STYLES;
+  static styles = [STYLES, SWATCH_STYLES];
 
   @property({ attribute: false }) hass!: HomeAssistant;
   @property({ attribute: false }) people: Person[] = [];
+  @property({ attribute: false }) defaultColors: string[] = DEFAULT_COLORS;
 
   @state() private _draft: DraftPerson = { ...EMPTY_DRAFT };
   @state() private _deletingId: string | null = null;
@@ -225,6 +228,11 @@ export class FamilyPlannerPeopleManagerDialog extends LitElement {
             .value=${this._draft.color}
             @input=${(e: Event) => (this._draft = { ...this._draft, color: (e.target as HTMLInputElement).value })}
           />
+          ${renderColorSwatches(
+            this.defaultColors,
+            this._draft.color,
+            (c) => (this._draft = { ...this._draft, color: c })
+          )}
           <select
             .value=${this._draft.role}
             @change=${(e: Event) => (this._draft = { ...this._draft, role: (e.target as HTMLSelectElement).value })}

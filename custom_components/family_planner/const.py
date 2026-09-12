@@ -20,6 +20,9 @@ CONF_ALLOW_NON_ADMIN_WRITE: Final = "allow_non_admin_write"
 CONF_FIRST_WEEKDAY: Final = "first_weekday"
 CONF_TODAY_SENSOR_LIMIT: Final = "today_sensor_limit"
 CONF_REMINDER_TICK_SECONDS: Final = "reminder_tick_seconds"
+CONF_DEFAULT_REMINDER_MINUTES: Final = "default_reminder_minutes"
+CONF_DEFAULT_COLORS: Final = "default_colors"
+CONF_DEFAULT_ICONS: Final = "default_icons"
 
 DEFAULT_REQUIRE_PERSON: Final = True
 DEFAULT_ENABLE_STATUS: Final = True
@@ -28,6 +31,7 @@ DEFAULT_ALLOW_NON_ADMIN_WRITE: Final = True
 DEFAULT_FIRST_WEEKDAY: Final = "monday"
 DEFAULT_TODAY_SENSOR_LIMIT: Final = 20
 DEFAULT_REMINDER_TICK_SECONDS: Final = 30
+DEFAULT_REMINDER_MINUTES: Final = 60
 FIRED_REMINDER_RETENTION_HOURS: Final = 48
 
 # Options flow actions
@@ -71,6 +75,25 @@ DEFAULT_PERSON_COLORS: Final = [
     "#3949ab",
     "#d81b60",
 ]
+
+# Comma-separated defaults for the two options-flow text fields above (the
+# card offers these as quick-pick swatches when creating people/categories/
+# events). Kept as plain comma-separated strings, matching the option type.
+DEFAULT_COLORS: Final = ",".join(DEFAULT_PERSON_COLORS)
+DEFAULT_ICONS: Final = ",".join(
+    [
+        "mdi:calendar",
+        "mdi:school",
+        "mdi:briefcase",
+        "mdi:soccer",
+        "mdi:cake-variant",
+        "mdi:medical-bag",
+        "mdi:home",
+        "mdi:airplane",
+        "mdi:music",
+        "mdi:star",
+    ]
+)
 
 REMINDER_PRESET_OFFSETS: Final = [0, 5, 15, 30, 60, 1440]
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isoWeekNumber, shiftDateString, startOfWeek } from "../src/utils/datetime";
+import { computeEndFromStart, isoWeekNumber, shiftDateString, startOfWeek } from "../src/utils/datetime";
 
 describe("shiftDateString", () => {
   it("shifts a plain date forward by one day", () => {
@@ -41,6 +41,24 @@ describe("startOfWeek", () => {
     const start = startOfWeek(wed, "sunday");
     expect(start.getDay()).toBe(0);
     expect(start.getDate()).toBe(20);
+  });
+});
+
+describe("computeEndFromStart", () => {
+  it("adds the offset within the same day", () => {
+    expect(computeEndFromStart("2026-09-20", "09:00", 60)).toEqual({ date: "2026-09-20", time: "10:00" });
+  });
+
+  it("rolls over to the next day when the offset crosses midnight", () => {
+    expect(computeEndFromStart("2026-09-20", "23:30", 60)).toEqual({ date: "2026-09-21", time: "00:30" });
+  });
+
+  it("rolls over a month boundary when crossing midnight", () => {
+    expect(computeEndFromStart("2026-09-30", "23:45", 60)).toEqual({ date: "2026-10-01", time: "00:45" });
+  });
+
+  it("supports offsets other than 60 minutes", () => {
+    expect(computeEndFromStart("2026-09-20", "08:00", 30)).toEqual({ date: "2026-09-20", time: "08:30" });
   });
 });
 

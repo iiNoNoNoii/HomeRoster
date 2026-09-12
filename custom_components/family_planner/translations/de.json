@@ -29,7 +29,10 @@
           "allow_non_admin_write": "Nicht-Administratoren dürfen Termine bearbeiten",
           "first_weekday": "Erster Wochentag",
           "today_sensor_limit": "Max. Termine in Sensor-Attributen",
-          "reminder_tick_seconds": "Prüfintervall für Erinnerungen (Sekunden)"
+          "reminder_tick_seconds": "Prüfintervall für Erinnerungen (Sekunden)",
+          "default_reminder_minutes": "Standard-Erinnerung (Minuten vor Termin)",
+          "default_colors": "Standardfarben (kommagetrennt, Hex)",
+          "default_icons": "Standard-Icons (kommagetrennt, MDI)"
         }
       },
       "people": {
@@ -39,7 +42,7 @@
           "action": "Aktion",
           "person_id": "Person",
           "name": "Name (bei Hinzufügen/Bearbeiten)",
-          "color": "Farbe, z. B. #3f51b5 (bei Hinzufügen/Bearbeiten)",
+          "color": "Farbe (bei Hinzufügen/Bearbeiten)",
           "role": "Rolle (bei Hinzufügen/Bearbeiten)"
         }
       },

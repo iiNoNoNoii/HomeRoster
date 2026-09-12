@@ -29,7 +29,10 @@
           "allow_non_admin_write": "Allow non-admins to edit events",
           "first_weekday": "First day of the week",
           "today_sensor_limit": "Max. events in sensor attributes",
-          "reminder_tick_seconds": "Reminder check interval (seconds)"
+          "reminder_tick_seconds": "Reminder check interval (seconds)",
+          "default_reminder_minutes": "Default reminder (minutes before event)",
+          "default_colors": "Default colors (comma-separated, hex)",
+          "default_icons": "Default icons (comma-separated, MDI)"
         }
       },
       "people": {
@@ -39,7 +42,7 @@
           "action": "Action",
           "person_id": "Person",
           "name": "Name (for add/edit)",
-          "color": "Color, e.g. #3f51b5 (for add/edit)",
+          "color": "Color (for add/edit)",
           "role": "Role (for add/edit)"
         }
       },
