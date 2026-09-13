@@ -57,7 +57,7 @@ export interface HomeRosterApiErrorPayload {
   current?: Record<string, unknown>;
 }
 
-export type CalendarView = "today" | "day" | "week" | "month" | "agenda";
+export type CalendarView = "day" | "week" | "month" | "agenda";
 
 export interface HomeRosterCardConfig {
   type: string;

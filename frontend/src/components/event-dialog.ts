@@ -11,6 +11,7 @@ import { combineLocalDateTime, computeEndFromStart, dateOnly, shiftDateString, t
 import { resolveLanguage, t } from "../utils/localize";
 import { validateEventForm, type ValidationResult } from "../utils/validation";
 import { renderColorSwatches, renderIconSwatches, SWATCH_STYLES } from "../utils/swatches";
+import { personAvatarUrl } from "../views/shared";
 
 const FORM_STYLES = css`
   .field {
@@ -86,6 +87,9 @@ const FORM_STYLES = css`
     width: 12px;
     height: 12px;
     border-radius: 50%;
+  }
+  .person-chip .dot-img {
+    object-fit: cover;
   }
   .person-chip.selected {
     border-color: var(--fp-color, var(--primary-color));
@@ -523,18 +527,21 @@ export class HomeRosterEventDialog extends LitElement {
         <div class="chip-row">
           ${this.people
             .filter((p) => p.active)
-            .map(
-              (p) => html`
+            .map((p) => {
+              const avatar = personAvatarUrl(p, this.hass);
+              return html`
                 <button
                   type="button"
                   class="person-chip ${this._personIds.includes(p.id) ? "selected" : ""}"
                   style="--fp-color:${p.color}"
                   @click=${() => this._togglePerson(p.id)}
                 >
-                  <span class="dot" style="background:${p.color}"></span>${p.name}
+                  ${avatar
+                    ? html`<img class="dot dot-img" src=${avatar} alt="" />`
+                    : html`<span class="dot" style="background:${p.color}"></span>`}${p.name}
                 </button>
-              `
-            )}
+              `;
+            })}
         </div>
         ${this._errors.personIds ? html`<span class="error-text">${t(lang, "validation.person_required")}</span>` : nothing}
       </div>

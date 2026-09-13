@@ -40,6 +40,32 @@ export function groupEventsByDay(events: readonly FamilyEvent[], days: readonly 
   }));
 }
 
+/** Collapses a (typically wide-range, already search/category-filtered)
+ * event list down to at most one entry per recurring series: for events
+ * with `rrule` set, only the single soonest-starting matching occurrence
+ * (by `occurrence_start`) is kept per `id` (all occurrences of one series
+ * share the same event id); non-recurring events (`rrule` falsy) are never
+ * collapsed since there's only ever one occurrence of those to begin with.
+ * Used by the agenda-context search/category filter's wide forward-looking
+ * lookahead (see homeroster-card.ts) - "all future matches, except only the
+ * next occurrence for anything recurring". Order-independent: works
+ * regardless of whether `events` is already sorted. */
+export function collapseRecurringToNextOccurrence(events: readonly FamilyEvent[]): FamilyEvent[] {
+  const nonRecurring: FamilyEvent[] = [];
+  const earliestRecurringById = new Map<string, FamilyEvent>();
+  for (const event of events) {
+    if (!event.rrule) {
+      nonRecurring.push(event);
+      continue;
+    }
+    const current = earliestRecurringById.get(event.id);
+    if (!current || new Date(event.occurrence_start).getTime() < new Date(current.occurrence_start).getTime()) {
+      earliestRecurringById.set(event.id, event);
+    }
+  }
+  return [...nonRecurring, ...earliestRecurringById.values()];
+}
+
 /** Returns the distinct calendar days present among `events` (via each
  * timed event's `occurrence_start`, or the day an all-day event starts on),
  * sorted chronologically. Used by the flat search/category results list,

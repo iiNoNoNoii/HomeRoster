@@ -5,7 +5,6 @@
 type Dict = Record<string, string>;
 
 const de: Dict = {
-  "view.today": "Heute",
   "view.day": "Tag",
   "view.week": "Woche",
   "view.month": "Monat",
@@ -78,6 +77,7 @@ const de: Dict = {
   "people.role.child": "Kind",
   "people.role.other": "Sonstige",
   "people.active": "Aktiv",
+  "people.linked_entity": "Verknüpfte Person (optional)",
   "people.delete_title": "Person löschen?",
   "people.delete_strategy.deactivate": "Nur deaktivieren",
   "people.delete_strategy.remove_from_events": "Aus Terminen entfernen",
@@ -117,7 +117,6 @@ const de: Dict = {
 };
 
 const en: Dict = {
-  "view.today": "Today",
   "view.day": "Day",
   "view.week": "Week",
   "view.month": "Month",
@@ -190,6 +189,7 @@ const en: Dict = {
   "people.role.child": "Child",
   "people.role.other": "Other",
   "people.active": "Active",
+  "people.linked_entity": "Linked person (optional)",
   "people.delete_title": "Delete person?",
   "people.delete_strategy.deactivate": "Deactivate only",
   "people.delete_strategy.remove_from_events": "Remove from events",

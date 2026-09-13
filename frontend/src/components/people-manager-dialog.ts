@@ -11,6 +11,7 @@ import type { Person } from "../types";
 import { DEFAULT_COLORS } from "../const";
 import { resolveLanguage, t } from "../utils/localize";
 import { renderColorSwatches, SWATCH_STYLES } from "../utils/swatches";
+import { personAvatarUrl } from "../views/shared";
 
 const STYLES = css`
   .row {
@@ -25,6 +26,20 @@ const STYLES = css`
     height: 16px;
     border-radius: 50%;
     flex-shrink: 0;
+  }
+  .dot-img {
+    object-fit: cover;
+  }
+  .entity-picker-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 240px;
+    flex: 1 1 240px;
+  }
+  .entity-picker-field label {
+    font-size: 0.8rem;
+    color: var(--secondary-text-color);
   }
   .name {
     flex: 1;
@@ -91,9 +106,10 @@ interface DraftPerson {
   name: string;
   color: string;
   role: string;
+  linkedPersonEntityId: string;
 }
 
-const EMPTY_DRAFT: DraftPerson = { id: null, name: "", color: "#3f51b5", role: "" };
+const EMPTY_DRAFT: DraftPerson = { id: null, name: "", color: "#3f51b5", role: "", linkedPersonEntityId: "" };
 
 @customElement("homeroster-people-manager-dialog")
 export class HomeRosterPeopleManagerDialog extends LitElement {
@@ -126,12 +142,14 @@ export class HomeRosterPeopleManagerDialog extends LitElement {
           name: this._draft.name.trim(),
           color: this._draft.color,
           role: (this._draft.role || null) as Person["role"],
+          linked_person_entity_id: this._draft.linkedPersonEntityId || null,
         });
       } else {
         await api.createPerson(this.hass, {
           name: this._draft.name.trim(),
           color: this._draft.color,
           role: (this._draft.role || null) as Person["role"],
+          linked_person_entity_id: this._draft.linkedPersonEntityId || null,
         });
       }
       this._draft = { ...EMPTY_DRAFT };
@@ -184,10 +202,13 @@ export class HomeRosterPeopleManagerDialog extends LitElement {
     return html`
       <homeroster-dialog-shell .heading=${t(lang, "people.title")} @fp-shell-close=${() => this._close()}>
         ${this._error ? html`<div class="confirm-box">${this._error}</div>` : nothing}
-        ${sorted.map(
-          (person, index) => html`
+        ${sorted.map((person, index) => {
+          const avatar = personAvatarUrl(person, this.hass);
+          return html`
             <div class="row">
-              <span class="dot" style="background:${person.color}"></span>
+              ${avatar
+                ? html`<img class="dot dot-img" src=${avatar} alt="" />`
+                : html`<span class="dot" style="background:${person.color}"></span>`}
               <span class="name ${person.active ? "" : "inactive"}">${person.name}</span>
               <button class="iconbtn" title="↑" ?disabled=${index === 0} @click=${() => this._move(person, -1)}>
                 <ha-icon icon="mdi:arrow-up"></ha-icon>
@@ -207,7 +228,13 @@ export class HomeRosterPeopleManagerDialog extends LitElement {
                 class="iconbtn"
                 title=${t(lang, "action.edit")}
                 @click=${() =>
-                  (this._draft = { id: person.id, name: person.name, color: person.color, role: person.role ?? "" })}
+                  (this._draft = {
+                    id: person.id,
+                    name: person.name,
+                    color: person.color,
+                    role: person.role ?? "",
+                    linkedPersonEntityId: person.linked_person_entity_id ?? "",
+                  })}
               >
                 <ha-icon icon="mdi:pencil"></ha-icon>
               </button>
@@ -216,8 +243,8 @@ export class HomeRosterPeopleManagerDialog extends LitElement {
               </button>
             </div>
             ${this._deletingId === person.id ? this._renderDeleteConfirm(lang, person) : nothing}
-          `
-        )}
+          `;
+        })}
 
         <div class="form">
           <input
@@ -245,6 +272,17 @@ export class HomeRosterPeopleManagerDialog extends LitElement {
             <option value="child" ?selected=${this._draft.role === "child"}>${t(lang, "people.role.child")}</option>
             <option value="other" ?selected=${this._draft.role === "other"}>${t(lang, "people.role.other")}</option>
           </select>
+          <div class="entity-picker-field">
+            <label for="fp-linked-entity">${t(lang, "people.linked_entity")}</label>
+            <ha-entity-picker
+              id="fp-linked-entity"
+              .hass=${this.hass}
+              .value=${this._draft.linkedPersonEntityId}
+              .includeDomains=${["person"]}
+              @value-changed=${(e: CustomEvent<{ value: string }>) =>
+                (this._draft = { ...this._draft, linkedPersonEntityId: e.detail.value })}
+            ></ha-entity-picker>
+          </div>
           <button class="btn btn-primary" type="button" @click=${() => void this._save()}>
             ${this._draft.id ? t(lang, "action.save") : t(lang, "people.add")}
           </button>

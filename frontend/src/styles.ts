@@ -230,6 +230,9 @@ export const CARD_STYLES = css`
     border-radius: 50%;
     display: inline-block;
   }
+  .fp-person-chip-dot-img {
+    object-fit: cover;
+  }
   .fp-person-chip-all.active {
     border-color: var(--primary-color);
     background: color-mix(in srgb, var(--primary-color) 24%, var(--card-background-color, #fff));
@@ -318,6 +321,13 @@ export const CARD_STYLES = css`
   }
   .fp-person-dot-more {
     background: var(--disabled-text-color, #9e9e9e);
+  }
+  /* A person linked to a HA person.* entity with a picture set (see
+     views/shared.ts's personAvatarUrl()) renders that picture here instead
+     of the colored initial-letter dot - same size/shape, just an <img>. */
+  .fp-person-dot-img {
+    object-fit: cover;
+    background: var(--card-background-color, #fff);
   }
 
   /* ---- month view ---- */
@@ -619,6 +629,27 @@ export const CARD_STYLES = css`
   }
   .fp-agenda-item-location ha-icon {
     --mdc-icon-size: 14px;
+  }
+  /* Location text is a tappable Google Maps link (see
+     views/shared.ts's renderLocationLink()) but should still read as a
+     plain label, not a default blue/underlined link - only :hover and
+     :focus-visible reveal that it's interactive, matching the affordance
+     already used elsewhere in the card (e.g. .fp-fab:focus-visible above). */
+  .fp-location-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    color: inherit;
+    text-decoration: none;
+    border-radius: 4px;
+  }
+  .fp-location-link:hover {
+    color: var(--primary-color);
+    text-decoration: underline;
+  }
+  .fp-location-link:focus-visible {
+    outline: 2px solid var(--primary-color, #03a9f4);
+    outline-offset: 2px;
   }
   .fp-agenda-item-status {
     font-size: 0.72rem;

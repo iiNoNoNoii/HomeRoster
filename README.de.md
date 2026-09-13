@@ -41,8 +41,8 @@ als Backend und einer eigenen Lovelace-Karte (TypeScript/Lit) als Frontend.
 
 ## Funktionsübersicht
 
-- Eigene Kalenderkarte mit Tages-, Wochen-, Monats- und Agenda-Ansicht sowie
-  einer "Heute"-Ansicht. Die Wochenansicht zeigt eine rollierende
+- Eigene Kalenderkarte mit Agenda-, Tages-, Wochen- und Monatsansicht (in
+  dieser Reihenfolge im Ansichten-Umschalter). Die Wochenansicht zeigt eine rollierende
   7-Tage-Vorschau ab dem aktuell ausgewählten Datum (wie bei einer
   Wetter-App) mit je einem eigenen Abschnitt pro Tag, statt einer festen
   Montag–Sonntag-Kalenderwoche.
@@ -194,7 +194,7 @@ first_weekday: monday
 | Option | Beschreibung | Standard |
 | --- | --- | --- |
 | `title` | Kartentitel | „Familienkalender“ |
-| `default_view` | `today` / `day` / `week` / `month` / `agenda` | `week` |
+| `default_view` | `agenda` / `day` / `week` / `month` | `week` |
 | `people` | Nur diese Personen-IDs als Filter/Chips anzeigen (leer = alle aktiven) | leer |
 | `preselected_people` | Beim Öffnen vorausgewählte Personen-IDs | leer |
 | `visible_categories` | Nur diese Kategorie-IDs anzeigen (leer = alle aktiven) | leer |
@@ -223,8 +223,11 @@ Terminen aufgelistet, nicht mehr als Zeitraster nebeneinander. Dadurch
 wirken sich `start_hour`, `end_hour`, `time_step` und `show_now_line` nur
 noch auf die Tagesansicht aus, und `show_week_numbers`/`first_weekday`
 betreffen praktisch nur noch die Monatsansicht, da die Wochenansicht nicht
-mehr an eine einzelne Kalenderwoche gebunden ist. Die Tages-/„Heute“-Ansicht
-selbst ist unverändert ein stundenweises Zeitraster für genau einen Tag.
+mehr an eine einzelne Kalenderwoche gebunden ist. Die Tagesansicht selbst
+ist unverändert ein stundenweises Zeitraster für genau einen Tag (eine
+eigene „Heute“-Ansicht gibt es nicht mehr – die „Heute“-Sprungschaltfläche
+in der Tages-/Wochen-/Monats-/Agenda-Navigation führt bereits genau
+dorthin).
 
 **Kartensprache:** Über die Integrationsoption „Kartensprache“
 (**Einstellungen → Geräte & Dienste → HomeRoster → Konfigurieren →

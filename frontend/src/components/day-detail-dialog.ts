@@ -91,7 +91,7 @@ export class HomeRosterDayDetailDialog extends LitElement {
               <span class="bar" style="background:${color}"></span>
               <span class="time">${event.all_day ? t(lang, "event.all_day") : eventTimeLabel(event, true)}</span>
               <span class="title">${event.title}</span>
-              ${renderPersonDots(persons, 4, lang)}
+              ${renderPersonDots(persons, this.hass, 4, lang)}
             </button>
           `;
         })}

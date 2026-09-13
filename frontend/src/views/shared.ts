@@ -4,6 +4,7 @@ import { contrastTextColor, resolveEventColor } from "../utils/colors";
 import { formatTime, isSameDay } from "../utils/datetime";
 import { groupEventsByDay, uniqueSortedDays } from "../utils/group-events";
 import { t } from "../utils/localize";
+import type { HomeAssistant } from "../ha-types";
 import type { Category, FamilyEvent, Person } from "../types";
 import type { ViewContext } from "./context";
 
@@ -17,15 +18,38 @@ export function categoryForEvent(event: FamilyEvent, categories: Category[]): Ca
   return event.category_id ? categories.find((c) => c.id === event.category_id) : undefined;
 }
 
-/** Small stacked avatar dots identifying every assigned person (color + initial). */
-export function renderPersonDots(persons: Person[], max = 4, language?: string): TemplateResult {
+/** The picture inherited from a person's linked `person.*` HA entity, if
+ * any (see `Person.linked_person_entity_id` - already fully wired on the
+ * backend, just not consumed by the frontend before now). `entity_picture`
+ * is a standard Home Assistant person-entity attribute, typically a
+ * same-origin relative URL (e.g. `/api/image/serve/<id>/512x512`) that
+ * resolves correctly as a plain `<img src>` - no prefixing needed. Returns
+ * null whenever there's no link, the linked entity doesn't exist, or it has
+ * no picture set - callers fall back to the colored initial-letter dot in
+ * every one of those cases. */
+export function personAvatarUrl(person: Person, hass: HomeAssistant): string | null {
+  if (!person.linked_person_entity_id) {
+    return null;
+  }
+  const picture = hass.states[person.linked_person_entity_id]?.attributes?.entity_picture;
+  return typeof picture === "string" && picture ? picture : null;
+}
+
+/** Small stacked avatar dots identifying every assigned person - a rounded
+ * picture for a person linked to a HA `person.*` entity with a picture set
+ * (see `personAvatarUrl`), falling back to the colored initial-letter dot
+ * exactly as before otherwise. */
+export function renderPersonDots(persons: Person[], hass: HomeAssistant, max = 4, language?: string): TemplateResult {
   const shown = persons.slice(0, max);
   const overflow = persons.length - shown.length;
   return html`
     <span class="fp-person-dots" role="img" aria-label=${persons.map((p) => p.name).join(", ") || t(language, "event.no_people")}>
-      ${shown.map(
-        (p) => html`<span class="fp-person-dot" style="background:${p.color}" title=${p.name}>${p.name.slice(0, 1)}</span>`
-      )}
+      ${shown.map((p) => {
+        const avatar = personAvatarUrl(p, hass);
+        return avatar
+          ? html`<img class="fp-person-dot fp-person-dot-img" src=${avatar} alt="" title=${p.name} />`
+          : html`<span class="fp-person-dot" style="background:${p.color}" title=${p.name}>${p.name.slice(0, 1)}</span>`;
+      })}
       ${overflow > 0 ? html`<span class="fp-person-dot fp-person-dot-more">+${overflow}</span>` : nothing}
     </span>
   `;
@@ -66,13 +90,35 @@ export function renderEventChip(ctx: ViewContext, event: FamilyEvent, options?: 
         ? html`<span class="fp-chip-time">${eventTimeLabel(event, ctx.use24h)}</span>`
         : nothing}
       <span class="fp-chip-title">${event.title}</span>
-      ${persons.length > 1 ? renderPersonDots(persons, 3, ctx.language) : nothing}
+      ${persons.length > 1 ? renderPersonDots(persons, ctx.hass, 3, ctx.language) : nothing}
     </button>
   `;
 }
 
 export function statusLabel(status: string | null, language?: string): string {
   return status ? t(language, `status.${status}`) : "";
+}
+
+/** A `location` string rendered as a tappable Google Maps search link -
+ * `location` stays plain free text (no data model/geocoding involved); this
+ * just wraps whatever the user typed in a link that opens Google Maps'
+ * search UI for that exact text. Used wherever a saved event's location is
+ * rendered read-only (agenda-style item rows, the event detail dialog).
+ * `e.stopPropagation()` keeps a tap on the link from also triggering a
+ * parent row's "open event detail" click handler. */
+export function renderLocationLink(location: string): TemplateResult {
+  const href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`;
+  return html`
+    <a
+      class="fp-location-link"
+      href=${href}
+      target="_blank"
+      rel="noopener noreferrer"
+      @click=${(e: Event) => e.stopPropagation()}
+    >
+      <ha-icon icon="mdi:map-marker"></ha-icon>${location}
+    </a>
+  `;
 }
 
 /** A single "day-grouped event list" row: colored bar, time, title,
@@ -95,10 +141,10 @@ export function renderEventListItem(ctx: ViewContext, event: FamilyEvent): Templ
       >
       <span class="fp-agenda-item-title">${event.title}</span>
       ${event.location
-        ? html`<span class="fp-agenda-item-location"><ha-icon icon="mdi:map-marker"></ha-icon>${event.location}</span>`
+        ? html`<span class="fp-agenda-item-location">${renderLocationLink(event.location)}</span>`
         : nothing}
       ${event.status ? html`<span class="fp-agenda-item-status">${statusLabel(event.status, ctx.language)}</span>` : nothing}
-      ${renderPersonDots(persons, 4, ctx.language)}
+      ${renderPersonDots(persons, ctx.hass, 4, ctx.language)}
     </button>
   `;
 }

@@ -5,6 +5,7 @@ import "./dialog-shell";
 import { resolveEventColor } from "../utils/colors";
 import { formatTime } from "../utils/datetime";
 import { resolveLanguage, t } from "../utils/localize";
+import { renderLocationLink } from "../views/shared";
 import type { HomeAssistant } from "../ha-types";
 import type { Category, FamilyEvent, Person } from "../types";
 
@@ -52,6 +53,24 @@ const STYLES = css`
     border-radius: 6px;
     padding: 2px 8px;
     font-size: 0.78rem;
+  }
+  /* See styles.ts's matching .fp-location-link rule for the reasoning -
+     kept as a plain-looking label until :hover/:focus-visible. */
+  .fp-location-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: inherit;
+    text-decoration: none;
+    border-radius: 4px;
+  }
+  .fp-location-link:hover {
+    color: var(--primary-color);
+    text-decoration: underline;
+  }
+  .fp-location-link:focus-visible {
+    outline: 2px solid var(--primary-color, #03a9f4);
+    outline-offset: 2px;
   }
   .actions {
     display: flex;
@@ -142,7 +161,7 @@ export class HomeRosterEventDetailDialog extends LitElement {
           : nothing}
 
         ${event.location
-          ? html`<div class="meta-row"><ha-icon icon="mdi:map-marker"></ha-icon><div>${event.location}</div></div>`
+          ? html`<div class="meta-row"><div>${renderLocationLink(event.location)}</div></div>`
           : nothing}
         ${category
           ? html`<div class="meta-row"><ha-icon icon=${category.icon || "mdi:tag"}></ha-icon><div>${category.name}</div></div>`

@@ -35,7 +35,7 @@ const SCHEMA = [
   { name: "title", selector: { text: {} } },
   {
     name: "default_view",
-    selector: { select: { options: ["today", "day", "week", "month", "agenda"], mode: "dropdown" } },
+    selector: { select: { options: ["agenda", "day", "week", "month"], mode: "dropdown" } },
   },
   {
     type: "grid",

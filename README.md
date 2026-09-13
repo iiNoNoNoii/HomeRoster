@@ -41,8 +41,8 @@ backend and its own Lovelace card (TypeScript/Lit) as the frontend.
 
 ## Feature overview
 
-- A dedicated calendar card with day, week, month and agenda views, plus a
-  "Today" view. The week view shows a rolling 7-day preview starting from
+- A dedicated calendar card with agenda, day, week and month views (in that
+  tab order). The week view shows a rolling 7-day preview starting from
   the currently selected date (like a weather app's forecast), with its
   own section per day, instead of a fixed Monday–Sunday calendar week.
 - Events with title, subtitle, location, description, category, color,
@@ -191,7 +191,7 @@ first_weekday: monday
 | Option | Description | Default |
 | --- | --- | --- |
 | `title` | Card title | "Familienkalender" |
-| `default_view` | `today` / `day` / `week` / `month` / `agenda` | `week` |
+| `default_view` | `agenda` / `day` / `week` / `month` | `week` |
 | `people` | Show only these person IDs as filter chips (empty = all active) | empty |
 | `preselected_people` | Person IDs preselected when the card opens | empty |
 | `visible_categories` | Show only these category IDs (empty = all active) | empty |
@@ -220,8 +220,10 @@ events, rather than as a side-by-side time grid. As a result,
 `start_hour`, `end_hour`, `time_step` and `show_now_line` now only apply to
 the day view, and `show_week_numbers`/`first_weekday` effectively only
 matter for the month view, since the week view is no longer bound to a
-single calendar week. The day/"Today" view itself is unchanged: still an
-hour-by-hour time grid for a single day.
+single calendar week. The day view itself is unchanged: still an
+hour-by-hour time grid for a single day (there is no separate "Today" view
+any more – the "Heute"/"Today" nav-jump button on the day/week/month/agenda
+views already jumps to exactly the same thing).
 
 **Card language:** The integration option "Card language" (**Settings →
 Devices & Services → HomeRoster → Configure → General settings**) lets

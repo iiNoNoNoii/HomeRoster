@@ -1,4 +1,4 @@
-import { LitElement, html, nothing, type TemplateResult } from "lit";
+import { LitElement, html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import * as api from "./api";
 import { CARD_STYLES } from "./styles";
@@ -6,6 +6,7 @@ import { DEFAULT_COLORS, DEFAULT_ICONS, DEFAULT_REMINDER_MINUTES } from "./const
 import { addDays, resolveFirstWeekday, startOfMonthGrid, use24HourFormat } from "./utils/datetime";
 import { debounce } from "./utils/debounce";
 import { filterEvents } from "./utils/filter-events";
+import { collapseRecurringToNextOccurrence } from "./utils/group-events";
 import { resolveLanguage, t } from "./utils/localize";
 import type { HomeAssistant, LovelaceCardConfig } from "./ha-types";
 import {
@@ -20,7 +21,7 @@ import { renderAgendaView } from "./views/agenda";
 import type { ViewCallbacks, ViewContext } from "./views/context";
 import { renderDayView } from "./views/day";
 import { renderMonthView } from "./views/month";
-import { renderFilteredEventList } from "./views/shared";
+import { personAvatarUrl, renderFilteredEventList } from "./views/shared";
 import { computeWeekDays, renderWeekView } from "./views/week";
 import "./components/event-dialog";
 import "./components/event-detail-dialog";
@@ -28,12 +29,18 @@ import "./components/day-detail-dialog";
 import "./components/people-manager-dialog";
 import "./components/category-manager-dialog";
 
-const VIEWS: CalendarView[] = ["today", "day", "week", "month", "agenda"];
+const VIEWS: CalendarView[] = ["agenda", "day", "week", "month"];
 const BUS_EVENTS = [
   "homeroster_event_created",
   "homeroster_event_updated",
   "homeroster_event_deleted",
 ];
+// How far into the future the filtered-list (search/category) wide lookahead
+// fetch reaches - see _fetchWideRangeEvents(). Matches the backend's own
+// get_next_event lookahead bound (custom_components/homeroster) for
+// consistency of "how far into the future do we look" reasoning across the
+// project.
+const WIDE_RANGE_LOOKAHEAD_DAYS = 400;
 
 @customElement("homeroster-card")
 export class HomeRosterCard extends LitElement {
@@ -43,6 +50,12 @@ export class HomeRosterCard extends LitElement {
   @state() private _view: CalendarView = "week";
   @state() private _currentDate: Date = new Date();
   @state() private _events: FamilyEvent[] = [];
+  // Wide (today .. today+400d) result for filtered-list mode's search/
+  // category matching - see _fetchWideRangeEvents(). Only ever fetched
+  // while filtered-list mode is active (see _showFlatList/updated()); empty
+  // otherwise, so this stays a cheap no-op in the normal (non-filtering)
+  // case.
+  @state() private _wideRangeEvents: FamilyEvent[] = [];
   @state() private _people: Person[] = [];
   @state() private _categories: Category[] = [];
   @state() private _loading = true;
@@ -74,9 +87,14 @@ export class HomeRosterCard extends LitElement {
   private _bootstrapped = false;
   private _unsubBus: Array<() => void> = [];
   private _fetchToken = 0;
+  private _wideFetchToken = 0;
 
   private _debouncedSetSearch = debounce((value: string) => {
     this._search = value;
+  }, 200);
+
+  private _debouncedFetchWideRange = debounce(() => {
+    void this._fetchWideRangeEvents();
   }, 200);
 
   get hass(): HomeAssistant | undefined {
@@ -221,11 +239,6 @@ export class HomeRosterCard extends LitElement {
 
   private _computeRange(): { start: Date; end: Date } {
     const firstWeekday = resolveFirstWeekday(this._hass!, this._config.first_weekday);
-    if (this._view === "today") {
-      const start = new Date();
-      start.setHours(0, 0, 0, 0);
-      return { start, end: addDays(start, 1) };
-    }
     if (this._view === "day") {
       const start = new Date(this._currentDate);
       start.setHours(0, 0, 0, 0);
@@ -287,6 +300,60 @@ export class HomeRosterCard extends LitElement {
       categoryIds: this._selectedCategoryIds,
       search: this._search,
     });
+  }
+
+  // Wide (today .. today+WIDE_RANGE_LOOKAHEAD_DAYS) fetch used only while
+  // filtered-list mode (_showFlatList) is active - a deliberate exception to
+  // the rest of the card's bounded-per-view-range fetch principle, so that
+  // a search/category filter surfaces every upcoming match instead of just
+  // whatever happens to be in the currently displayed day/week/month/agenda
+  // window. category_ids is passed server-side (the websocket command
+  // already supports it) since it narrows the result set the server
+  // computes; there is no server-side text search, so `search` is never
+  // sent here - filterEvents() below applies it (and everything else)
+  // client-side exactly as it already does for the normal bounded fetch.
+  private async _fetchWideRangeEvents(): Promise<void> {
+    if (!this._hass) {
+      return;
+    }
+    const token = ++this._wideFetchToken;
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const end = addDays(start, WIDE_RANGE_LOOKAHEAD_DAYS);
+    try {
+      const events = await api.getEvents(this._hass, {
+        start: start.toISOString(),
+        end: end.toISOString(),
+        category_ids: this._selectedCategoryIds.length > 0 ? this._selectedCategoryIds : undefined,
+        include_cancelled: true,
+      });
+      if (token !== this._wideFetchToken) {
+        return; // a newer wide fetch superseded this one
+      }
+      this._wideRangeEvents = events;
+    } catch (err) {
+      if (token !== this._wideFetchToken) {
+        return;
+      }
+      this._error = err instanceof Error ? err.message : String(err);
+    }
+  }
+
+  // The dataset rendered by the filtered/search list (_renderFlatList()):
+  // the wide-range fetch above, filtered the same way _filteredEvents
+  // filters the normal bounded fetch, then collapsed so a recurring series
+  // (event.rrule set) contributes only its single soonest matching
+  // occurrence - see utils/group-events.ts's collapseRecurringToNextOccurrence().
+  private get _flatListEvents(): FamilyEvent[] {
+    return collapseRecurringToNextOccurrence(
+      filterEvents(this._wideRangeEvents, {
+        showDoneEvents: this._config.show_done_events ?? true,
+        showCancelledEvents: this._config.show_cancelled_events ?? false,
+        personIds: this._selectedPersonIds,
+        categoryIds: this._selectedCategoryIds,
+        search: this._search,
+      })
+    );
   }
 
   // Searching (or selecting at least one category) replaces the normal
@@ -481,9 +548,6 @@ export class HomeRosterCard extends LitElement {
       return "";
     }
     const lang = hass.language || "de";
-    if (this._view === "today") {
-      return new Intl.DateTimeFormat(lang, { weekday: "long", day: "numeric", month: "long" }).format(new Date());
-    }
     if (this._view === "day") {
       return new Intl.DateTimeFormat(lang, { weekday: "long", day: "numeric", month: "long" }).format(this._currentDate);
     }
@@ -518,7 +582,7 @@ export class HomeRosterCard extends LitElement {
       events: this._filteredEvents,
       people: this._people,
       categories: this._categories,
-      currentDate: this._view === "today" ? new Date() : this._currentDate,
+      currentDate: this._currentDate,
       now: new Date(),
       language: this._resolvedLanguage(),
       firstWeekday: resolveFirstWeekday(this._hass!, this._config.first_weekday),
@@ -530,7 +594,6 @@ export class HomeRosterCard extends LitElement {
   private _renderView(): TemplateResult {
     const ctx = this._buildViewContext();
     switch (this._view) {
-      case "today":
       case "day":
         return renderDayView(ctx);
       case "week":
@@ -578,18 +641,21 @@ export class HomeRosterCard extends LitElement {
         >
           ${t(lang, "filter.all_people")}
         </button>
-        ${this._visiblePeople.map(
-          (p) => html`
+        ${this._visiblePeople.map((p) => {
+          const avatar = this._hass ? personAvatarUrl(p, this._hass) : null;
+          return html`
             <button
               type="button"
               class="fp-person-chip ${this._selectedPersonIds.includes(p.id) ? "active" : ""}"
               style="--fp-chip-color:${p.color}"
               @click=${() => this._togglePerson(p.id)}
             >
-              <span class="fp-person-chip-dot" style="background:${p.color}"></span>${p.name}
+              ${avatar
+                ? html`<img class="fp-person-chip-dot fp-person-chip-dot-img" src=${avatar} alt="" />`
+                : html`<span class="fp-person-chip-dot" style="background:${p.color}"></span>`}${p.name}
             </button>
-          `
-        )}
+          `;
+        })}
         ${this._visibleCategories.map(
           (c) => html`
             <button
@@ -607,7 +673,19 @@ export class HomeRosterCard extends LitElement {
   }
 
   private _renderFlatList(): TemplateResult {
-    return renderFilteredEventList(this._buildViewContext());
+    return renderFilteredEventList({ ...this._buildViewContext(), events: this._flatListEvents });
+  }
+
+  protected updated(changed: PropertyValues): void {
+    // Fetch (debounced) the wide-range dataset whenever filtered-list mode
+    // is active and the search text or category selection just changed -
+    // including the transition into filtered-list mode itself, since that
+    // transition is always caused by one of these two state changes (see
+    // _showFlatList's trigger condition). Left untouched while not in
+    // filtered-list mode, per _fetchWideRangeEvents()'s doc comment.
+    if ((changed.has("_search") || changed.has("_selectedCategoryIds")) && this._showFlatList) {
+      this._debouncedFetchWideRange();
+    }
   }
 
   protected render(): TemplateResult {
@@ -676,21 +754,17 @@ export class HomeRosterCard extends LitElement {
                 `
               )}
             </div>
-            ${this._view !== "today"
-              ? html`
-                  <div class="fp-nav-arrows">
-                    <ha-icon-button title=${t(lang, "nav.prev")} @click=${() => this._navStep(-1)}>
-                      <ha-icon icon="mdi:chevron-left"></ha-icon>
-                    </ha-icon-button>
-                    <button type="button" class="fp-nav-today" @click=${() => this._navToday()}>
-                      ${t(lang, "nav.today")}
-                    </button>
-                    <ha-icon-button title=${t(lang, "nav.next")} @click=${() => this._navStep(1)}>
-                      <ha-icon icon="mdi:chevron-right"></ha-icon>
-                    </ha-icon-button>
-                  </div>
-                `
-              : nothing}
+            <div class="fp-nav-arrows">
+              <ha-icon-button title=${t(lang, "nav.prev")} @click=${() => this._navStep(-1)}>
+                <ha-icon icon="mdi:chevron-left"></ha-icon>
+              </ha-icon-button>
+              <button type="button" class="fp-nav-today" @click=${() => this._navToday()}>
+                ${t(lang, "nav.today")}
+              </button>
+              <ha-icon-button title=${t(lang, "nav.next")} @click=${() => this._navStep(1)}>
+                <ha-icon icon="mdi:chevron-right"></ha-icon>
+              </ha-icon-button>
+            </div>
             <div class="fp-range-label">${this._rangeLabel()}</div>
           </div>
           ${this._config.show_search || this._config.show_filters
