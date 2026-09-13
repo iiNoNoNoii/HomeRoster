@@ -175,6 +175,7 @@ class Event:
     person_ids: list[str] = field(default_factory=list)
     description: str | None = None
     location: str | None = None
+    location_address: str | None = None
     category_id: str | None = None
     color: str | None = None
     icon: str | None = None
@@ -247,6 +248,7 @@ class Event:
             "person_ids": list(self.person_ids),
             "description": self.description,
             "location": self.location,
+            "location_address": self.location_address,
             "category_id": self.category_id,
             "color": self.color,
             "icon": self.icon,
@@ -272,6 +274,7 @@ class Event:
             person_ids=list(data.get("person_ids", [])),
             description=data.get("description"),
             location=data.get("location"),
+            location_address=data.get("location_address"),
             category_id=data.get("category_id"),
             color=data.get("color"),
             icon=data.get("icon"),

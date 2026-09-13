@@ -99,24 +99,28 @@ export function statusLabel(status: string | null, language?: string): string {
   return status ? t(language, `status.${status}`) : "";
 }
 
-/** A `location` string rendered as a tappable Google Maps search link -
- * `location` stays plain free text (no data model/geocoding involved); this
+/** A `location` (+ optional `address`) rendered as a tappable Google Maps
+ * search link - both stay plain free text (no geocoding involved); this
  * just wraps whatever the user typed in a link that opens Google Maps'
- * search UI for that exact text. Used wherever a saved event's location is
- * rendered read-only (agenda-style item rows, the event detail dialog).
+ * search UI, using the address too (when set) for a more precise query.
+ * Used wherever a saved event's location is rendered read-only
+ * (agenda-style item rows, the event detail dialog).
  * `e.stopPropagation()` keeps a tap on the link from also triggering a
- * parent row's "open event detail" click handler. */
-export function renderLocationLink(location: string): TemplateResult {
-  const href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`;
+ * parent row's "open event detail" click handler.
+ *
+ * Deliberately a plain top-level navigation (no `target="_blank"`): the
+ * Home Assistant Companion App's embedded webview does not reliably open
+ * links that request a new window/tab (`target="_blank"` / `window.open`),
+ * so they silently do nothing when tapped there, even though the very same
+ * link works fine as a new tab in a desktop browser. Top-level navigation
+ * is what mobile webviews hand off to the OS's default browser/maps app,
+ * so this is the one approach that works consistently everywhere. */
+export function renderLocationLink(location: string, address?: string | null): TemplateResult {
+  const query = address ? `${location}, ${address}` : location;
+  const href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
   return html`
-    <a
-      class="fp-location-link"
-      href=${href}
-      target="_blank"
-      rel="noopener noreferrer"
-      @click=${(e: Event) => e.stopPropagation()}
-    >
-      <ha-icon icon="mdi:map-marker"></ha-icon>${location}
+    <a class="fp-location-link" href=${href} @click=${(e: Event) => e.stopPropagation()}>
+      <ha-icon icon="mdi:map-marker"></ha-icon>${location}${address ? html`<span class="fp-location-address"> · ${address}</span>` : nothing}
     </a>
   `;
 }
@@ -141,7 +145,7 @@ export function renderEventListItem(ctx: ViewContext, event: FamilyEvent): Templ
       >
       <span class="fp-agenda-item-title">${event.title}</span>
       ${event.location
-        ? html`<span class="fp-agenda-item-location">${renderLocationLink(event.location)}</span>`
+        ? html`<span class="fp-agenda-item-location">${renderLocationLink(event.location, event.location_address)}</span>`
         : nothing}
       ${event.status ? html`<span class="fp-agenda-item-status">${statusLabel(event.status, ctx.language)}</span>` : nothing}
       ${renderPersonDots(persons, ctx.hass, 4, ctx.language)}

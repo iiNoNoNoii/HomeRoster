@@ -186,6 +186,7 @@ export class HomeRosterEventDialog extends LitElement {
   @state() private _personIds: string[] = [];
   @state() private _description = "";
   @state() private _location = "";
+  @state() private _locationAddress = "";
   @state() private _categoryId = "";
   @state() private _color = "";
   @state() private _icon = "";
@@ -240,6 +241,7 @@ export class HomeRosterEventDialog extends LitElement {
       this._personIds = [...e.person_ids];
       this._description = e.description ?? "";
       this._location = e.location ?? "";
+      this._locationAddress = e.location_address ?? "";
       this._categoryId = e.category_id ?? "";
       this._color = e.color ?? "";
       this._icon = e.icon ?? "";
@@ -349,6 +351,7 @@ export class HomeRosterEventDialog extends LitElement {
       person_ids: this._personIds,
       description: this._description.trim() || null,
       location: this._location.trim() || null,
+      location_address: this._locationAddress.trim() || null,
       category_id: this._categoryId || null,
       color: this._color.trim() || null,
       icon: this._icon.trim() || null,
@@ -558,17 +561,31 @@ export class HomeRosterEventDialog extends LitElement {
         ></textarea>
       </div>
 
-      <div class="field">
-        <label for="fp-location">${t(lang, "event.location")}</label>
-        <input
-          id="fp-location"
-          type="text"
-          .value=${this._location}
-          @input=${(e: Event) => {
-            this._location = (e.target as HTMLInputElement).value;
-            this._markDirty();
-          }}
-        />
+      <div class="row">
+        <div class="field">
+          <label for="fp-location">${t(lang, "event.location")}</label>
+          <input
+            id="fp-location"
+            type="text"
+            .value=${this._location}
+            @input=${(e: Event) => {
+              this._location = (e.target as HTMLInputElement).value;
+              this._markDirty();
+            }}
+          />
+        </div>
+        <div class="field">
+          <label for="fp-location-address">${t(lang, "event.location_address")}</label>
+          <input
+            id="fp-location-address"
+            type="text"
+            .value=${this._locationAddress}
+            @input=${(e: Event) => {
+              this._locationAddress = (e.target as HTMLInputElement).value;
+              this._markDirty();
+            }}
+          />
+        </div>
       </div>
 
       ${this.enableCategories

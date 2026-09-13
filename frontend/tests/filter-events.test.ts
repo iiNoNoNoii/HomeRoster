@@ -13,6 +13,7 @@ function makeEvent(overrides: Partial<FamilyEvent>): FamilyEvent {
     person_ids: ["anna"],
     description: null,
     location: null,
+    location_address: null,
     category_id: null,
     color: null,
     icon: null,
@@ -85,6 +86,15 @@ describe("filterEvents", () => {
     ];
     const result = filterEvents(events, { ...baseOptions, search: "zahnarzt" });
     expect(result.map((e) => e.id).sort()).toEqual(["a", "c"]);
+  });
+
+  it("searches the location_address field too", () => {
+    const events = [
+      makeEvent({ id: "a", title: "Geburtstag", location: "Oma & Opa", location_address: "Musterstraße 1, 12345 Musterstadt" }),
+      makeEvent({ id: "b", title: "Zahnarzt" }),
+    ];
+    const result = filterEvents(events, { ...baseOptions, search: "musterstadt" });
+    expect(result.map((e) => e.id)).toEqual(["a"]);
   });
 
   it("combines person, category and search filters (AND semantics)", () => {

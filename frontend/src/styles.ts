@@ -651,6 +651,9 @@ export const CARD_STYLES = css`
     outline: 2px solid var(--primary-color, #03a9f4);
     outline-offset: 2px;
   }
+  .fp-location-address {
+    color: var(--secondary-text-color);
+  }
   .fp-agenda-item-status {
     font-size: 0.72rem;
     color: var(--secondary-text-color);

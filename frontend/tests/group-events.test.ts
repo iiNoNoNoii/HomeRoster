@@ -13,6 +13,7 @@ function makeEvent(overrides: Partial<FamilyEvent>): FamilyEvent {
     person_ids: ["anna"],
     description: null,
     location: null,
+    location_address: null,
     category_id: null,
     color: null,
     icon: null,

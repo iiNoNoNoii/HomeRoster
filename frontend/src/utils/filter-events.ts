@@ -29,7 +29,7 @@ export function filterEvents(events: readonly FamilyEvent[], options: EventFilte
   const search = options.search.trim().toLowerCase();
   if (search) {
     list = list.filter((e) =>
-      [e.title, e.subtitle, e.description, e.location]
+      [e.title, e.subtitle, e.description, e.location, e.location_address]
         .filter((field): field is string => Boolean(field))
         .some((field) => field.toLowerCase().includes(search))
     );

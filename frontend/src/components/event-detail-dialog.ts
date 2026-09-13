@@ -72,6 +72,9 @@ const STYLES = css`
     outline: 2px solid var(--primary-color, #03a9f4);
     outline-offset: 2px;
   }
+  .fp-location-address {
+    color: var(--secondary-text-color);
+  }
   .actions {
     display: flex;
     flex-wrap: wrap;
@@ -161,7 +164,7 @@ export class HomeRosterEventDetailDialog extends LitElement {
           : nothing}
 
         ${event.location
-          ? html`<div class="meta-row"><div>${renderLocationLink(event.location)}</div></div>`
+          ? html`<div class="meta-row"><div>${renderLocationLink(event.location, event.location_address)}</div></div>`
           : nothing}
         ${category
           ? html`<div class="meta-row"><ha-icon icon=${category.icon || "mdi:tag"}></ha-icon><div>${category.name}</div></div>`

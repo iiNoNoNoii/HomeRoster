@@ -59,6 +59,39 @@ async def test_main_calendar_get_events_returns_events_in_range(coordinator):
     assert events[0].summary == "Zahnarzt"
 
 
+async def test_native_calendar_event_combines_location_and_address(coordinator):
+    await coordinator.async_create_event(
+        {
+            "title": "Geburtstag",
+            "start": "2026-09-20T14:00:00+02:00",
+            "end": "2026-09-20T15:00:00+02:00",
+            "location": "Oma & Opa",
+            "location_address": "Musterstraße 1, 12345 Musterstadt",
+        }
+    )
+    entity = HomeRosterCalendar(coordinator, coordinator.entry, None)
+    events = await entity.async_get_events(
+        coordinator.hass, dt.datetime(2026, 9, 20, tzinfo=UTC), dt.datetime(2026, 9, 21, tzinfo=UTC)
+    )
+    assert events[0].location == "Oma & Opa, Musterstraße 1, 12345 Musterstadt"
+
+
+async def test_native_calendar_event_location_without_address(coordinator):
+    await coordinator.async_create_event(
+        {
+            "title": "Zahnarzt",
+            "start": "2026-09-20T14:00:00+02:00",
+            "end": "2026-09-20T15:00:00+02:00",
+            "location": "Praxis Dr. Müller",
+        }
+    )
+    entity = HomeRosterCalendar(coordinator, coordinator.entry, None)
+    events = await entity.async_get_events(
+        coordinator.hass, dt.datetime(2026, 9, 20, tzinfo=UTC), dt.datetime(2026, 9, 21, tzinfo=UTC)
+    )
+    assert events[0].location == "Praxis Dr. Müller"
+
+
 async def test_person_calendar_only_returns_that_persons_events(coordinator):
     anna = await coordinator.async_create_person({"name": "Anna", "color": "#ff0000"})
     tom = await coordinator.async_create_person({"name": "Tom", "color": "#00ff00"})

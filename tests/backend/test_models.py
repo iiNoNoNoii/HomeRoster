@@ -168,6 +168,30 @@ class TestEventValidation:
         restored = Event.from_dict(event.to_dict())
         assert restored == event
 
+    def test_location_and_address_round_trip_independently(self):
+        event = Event(
+            id=new_id(),
+            title="Geburtstag",
+            start="2026-09-20T14:00:00+02:00",
+            end="2026-09-20T15:00:00+02:00",
+            location="Oma & Opa",
+            location_address="Musterstraße 1, 12345 Musterstadt",
+        )
+        restored = Event.from_dict(event.to_dict())
+        assert restored.location == "Oma & Opa"
+        assert restored.location_address == "Musterstraße 1, 12345 Musterstadt"
+
+    def test_location_address_defaults_to_none(self):
+        event = Event.from_dict(
+            {
+                "id": new_id(),
+                "title": "X",
+                "start": "2026-09-20T14:00:00+02:00",
+                "end": "2026-09-20T15:00:00+02:00",
+            }
+        )
+        assert event.location_address is None
+
 
 class TestDstSafety:
     """Europe/Berlin: 2026-03-29 clocks spring forward (02:00 -> 03:00)."""

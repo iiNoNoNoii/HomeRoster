@@ -49,6 +49,11 @@ create_event:
       name: Ort
       selector:
         text:
+    location_address:
+      name: Adresse
+      description: Optionale, genauere Adresse zum Ort (für den Google-Maps-Link).
+      selector:
+        text:
     category_id:
       name: Kategorie
       description: ID einer konfigurierten Kategorie.
@@ -129,6 +134,10 @@ update_event:
           multiline: true
     location:
       name: Ort
+      selector:
+        text:
+    location_address:
+      name: Adresse
       selector:
         text:
     category_id:

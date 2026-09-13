@@ -54,6 +54,14 @@ def _device_info(entry: ConfigEntry) -> DeviceInfo:
     )
 
 
+def _combined_location(event: Any) -> str | None:
+    """Combine place name and address into the single string the native
+    calendar.location attribute expects (our own card shows them as two
+    separate fields - see Event.location / Event.location_address)."""
+    parts = [p for p in (event.location, event.location_address) if p]
+    return ", ".join(parts) if parts else None
+
+
 def _occurrence_to_calendar_event(occ: EventOccurrence) -> CalendarEvent:
     event = occ.event
     if event.all_day:
@@ -67,7 +75,7 @@ def _occurrence_to_calendar_event(occ: EventOccurrence) -> CalendarEvent:
         end=end,
         summary=event.title,
         description=event.description,
-        location=event.location,
+        location=_combined_location(event),
         uid=event.id,
         recurrence_id=occ.recurrence_id,
         rrule=event.rrule,

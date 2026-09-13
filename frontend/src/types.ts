@@ -34,6 +34,7 @@ export interface FamilyEvent {
   person_ids: string[];
   description: string | null;
   location: string | null;
+  location_address: string | null;
   category_id: string | null;
   color: string | null;
   icon: string | null;
