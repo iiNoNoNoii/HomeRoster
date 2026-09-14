@@ -12,6 +12,7 @@ from homeassistant.components.frontend import add_extra_js_url
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, SupportsResponse
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers.event import async_call_later
 
 try:  # ServiceValidationError was added in HA 2024.1, well below our min_ha_version.
     from homeassistant.exceptions import ServiceValidationError
@@ -57,6 +58,14 @@ _LOGGER = logging.getLogger(__name__)
 WWW_PATH = Path(__file__).parent / "www"
 CARD_JS_FILENAME = "homeroster-card.js"
 CARD_URL_BASE = "/homeroster_static"
+# Retry delays (seconds) for _async_register_frontend() if it fails for a
+# transient reason (e.g. the www/ file briefly missing/unreadable during an
+# update, or hass.http not fully warmed up yet on a cold start). Without
+# this, a single transient failure during startup would silently leave the
+# card permanently unregistered for the rest of that HA run (the previous
+# behaviour), forcing a full Home Assistant restart to recover instead of
+# self-healing within a minute.
+FRONTEND_RETRY_DELAYS = (5, 15, 60)
 
 _EVENT_FIELDS_SCHEMA = {
     vol.Optional(ATTR_SUBTITLE): vol.Any(str, None),
@@ -277,22 +286,25 @@ async def _async_register_frontend(hass: HomeAssistant) -> None:
     # be redundant in practice. It would also pull in frontend's full
     # dependency chain (onboarding -> analytics/person -> recorder, etc.)
     # which is unnecessarily heavy and not what actually protects against
-    # the "Custom element not found" bug. The one theoretical gap (a
-    # headless HA instance without frontend loaded at all) is handled by the
-    # broad except-and-log around the call to this function in
-    # async_setup_entry, so it degrades gracefully instead of crashing setup.
+    # the "Custom element not found" bug. Any failure here (including a
+    # headless HA instance without frontend loaded) is handled by the caller,
+    # _async_register_frontend_with_retry(), which retries with backoff
+    # before giving up and logging, so setup never crashes.
     if hass.data.get(f"{DOMAIN}_frontend_registered"):
         return
     card_file = WWW_PATH / CARD_JS_FILENAME
     if not card_file.exists():
-        _LOGGER.warning(
-            "HomeRoster: %s wurde nicht gefunden. Die Karte wurde vermutlich noch "
-            "nicht gebaut - siehe README ('npm run build' im frontend/-Verzeichnis) und "
-            "kopiere frontend/dist/homeroster-card.js nach custom_components/"
-            "homeroster/www/.",
-            card_file,
+        # Deliberately raised (not just logged) so the caller's retry loop
+        # covers this too - e.g. an update/HACS refresh can leave this file
+        # transiently missing for a moment during a config entry reload,
+        # which used to silently and permanently skip card registration for
+        # the rest of that HA run instead of resolving itself within a
+        # minute once the file reappears.
+        raise FileNotFoundError(
+            f"{card_file} wurde nicht gefunden. Die Karte wurde vermutlich noch nicht "
+            "gebaut - siehe README ('npm run build' im frontend/-Verzeichnis) und kopiere "
+            "frontend/dist/homeroster-card.js nach custom_components/homeroster/www/."
         )
-        return
     # Imported locally: StaticPathConfig / async_register_static_paths were
     # added in HA 2024.7 (see manifest.json min_ha_version). A local import
     # keeps this module importable for tooling running against older cores,
@@ -302,22 +314,74 @@ async def _async_register_frontend(hass: HomeAssistant) -> None:
     # Cache-bust via a content hash embedded in the URL itself (no query
     # string, since add_extra_js_url loads this as a JS module and some
     # browsers/HA frontend tooling do not reliably re-fetch module URLs that
-    # only differ by "?v=..."). `cache_headers=False` only stops Home
-    # Assistant from attaching its own long-lived (1 month) Cache-Control
-    # header - it does not send "no-cache" either, so without this a browser
-    # can still keep serving a stale/broken bundle from a previous version
-    # under the same URL. Hashing the content means an updated bundle is
-    # always served under a brand-new URL, so a stale cache entry can never
-    # collide with it.
+    # only differ by "?v=..."). Because the URL changes whenever the file's
+    # content changes, this specific URL's response can never become stale -
+    # it either 404s (never registered/wrong build) or is exactly this
+    # content, forever. That makes `cache_headers=True` (HA's standard
+    # public, max-age=31d static-file caching) both safe and desirable here:
+    # it gives browsers *and* any intermediate proxy/CDN (e.g. a Cloudflare
+    # Tunnel) an explicit, unambiguous caching instruction instead of
+    # leaving them to fall back to heuristic caching of an unheadered
+    # response - which behaves inconsistently across clients/proxies and is
+    # a plausible source of the "works on one device/account, not another"
+    # reports seen in the field. A previous version of this code used
+    # cache_headers=False for the same "never serve something stale" goal,
+    # but that reasoning was backwards: omitting the header doesn't disable
+    # caching, it just makes it unpredictable.
     content_hash = hashlib.sha256(card_file.read_bytes()).hexdigest()[:10]
     url_path = f"{CARD_URL_BASE}/homeroster-card-{content_hash}.js"
 
     await hass.http.async_register_static_paths(
-        [StaticPathConfig(url_path, str(card_file), cache_headers=False)]
+        [StaticPathConfig(url_path, str(card_file), cache_headers=True)]
     )
     add_extra_js_url(hass, url_path)
     hass.data[f"{DOMAIN}_frontend_registered"] = True
     _LOGGER.info("HomeRoster: Lovelace-Karte erfolgreich unter %s registriert.", url_path)
+
+
+async def _async_register_frontend_with_retry(hass: HomeAssistant, attempt: int = 0) -> None:
+    """Wrap _async_register_frontend() with a bounded retry on transient failure.
+
+    A single failed attempt (e.g. the www/ file briefly unreadable during an
+    update/HACS refresh, or some other transient error) used to leave the
+    card permanently unregistered for the rest of that Home Assistant run -
+    the only recovery was a full restart. This retries a few times with
+    backoff before giving up and logging, so most transient startup hiccups
+    self-heal within about a minute instead.
+    """
+    try:
+        await _async_register_frontend(hass)
+    except ImportError:
+        _LOGGER.error(
+            "HomeRoster: Die Lovelace-Karte konnte nicht automatisch registriert "
+            "werden - diese Home-Assistant-Version ist älter als %s. Bitte Home Assistant "
+            "aktualisieren; Backend, Sensoren und Automationen funktionieren unabhängig davon.",
+            "2024.10.0",
+        )
+    except Exception:  # noqa: BLE001 - frontend registration must never break entry setup
+        if attempt < len(FRONTEND_RETRY_DELAYS):
+            delay = FRONTEND_RETRY_DELAYS[attempt]
+            _LOGGER.warning(
+                "HomeRoster: Registrierung der Lovelace-Karte fehlgeschlagen "
+                "(Versuch %s/%s), erneuter Versuch in %s Sekunden.",
+                attempt + 1,
+                len(FRONTEND_RETRY_DELAYS),
+                delay,
+                exc_info=True,
+            )
+
+            async def _retry(_now: Any) -> None:
+                await _async_register_frontend_with_retry(hass, attempt + 1)
+
+            async_call_later(hass, delay, _retry)
+        else:
+            _LOGGER.exception(
+                "HomeRoster: Die Lovelace-Karte konnte auch nach mehreren Versuchen nicht "
+                "registriert werden (www/%s). Backend, Sensoren, Kalender und Automationen "
+                "funktionieren unabhängig davon weiter; ein Neustart von Home Assistant "
+                "behebt dies in der Regel.",
+                CARD_JS_FILENAME,
+            )
 
 
 async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
@@ -346,22 +410,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         sw_version="1.0.0",
     )
 
-    try:
-        await _async_register_frontend(hass)
-    except ImportError:
-        _LOGGER.error(
-            "HomeRoster: Die Lovelace-Karte konnte nicht automatisch registriert "
-            "werden - diese Home-Assistant-Version ist älter als %s. Bitte Home Assistant "
-            "aktualisieren; Backend, Sensoren und Automationen funktionieren unabhängig davon.",
-            "2024.10.0",
-        )
-    except Exception:  # noqa: BLE001 - frontend registration must never break entry setup
-        _LOGGER.exception(
-            "HomeRoster: Unerwarteter Fehler bei der Registrierung der Lovelace-Karte "
-            "(www/%s). Backend, Sensoren, Kalender und Automationen funktionieren unabhängig "
-            "davon weiter; bitte diesen Fehler im Home-Assistant-Log prüfen.",
-            CARD_JS_FILENAME,
-        )
+    await _async_register_frontend_with_retry(hass)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
