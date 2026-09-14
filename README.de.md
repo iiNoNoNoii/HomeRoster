@@ -366,6 +366,24 @@ aufgeräumt, damit die Speicherdatei nicht unbegrenzt wächst.
 - `sensor.homeroster_next_event` / `..._next_event_<person>` –
   Timestamp-Sensor, State = ISO-Zeitpunkt des nächsten (oder laufenden)
   Termins bzw. `unbekannt`, Attribute inkl. Titel, Ort, Personen, Kategorie.
+- `sensor.homeroster_next_reminder` / `..._next_reminder_<person>` –
+  Timestamp-Sensor; State = Fälligkeitszeitpunkt der *nächsten anstehenden
+  Erinnerung* – nicht zwangsläufig die Erinnerung zum nächsten Termin: Ein
+  später startender Termin mit längerem Vorlauf kann früher fällig sein als
+  ein früherer Termin mit kurzem Vorlauf (z. B. ist ein 15:00-Uhr-Termin mit
+  60 Min. Vorlauf schon um 14:00 Uhr fällig, vor einem 14:30-Uhr-Termin mit
+  nur 5 Min. Vorlauf). Für die Dashboard-Anzeige gedacht; Attribute
+  enthalten Titel, Start, Ort, zugewiesene Personen (`person_names`) und
+  den Vorlauf der Erinnerung (`offset_minutes`).
+- `sensor.homeroster_reminder_due` / `..._reminder_due_<person>` – die
+  Entity für **Benachrichtigungs-Automatisierungen**: Der State wechselt
+  bei jeder tatsächlich fällig werdenden Erinnerung auf einen frischen
+  Zeitstempel (bleibt nie "hängen", verpasst auch keine zweite Erinnerung
+  im selben Scheduler-Tick), mit denselben Attributen wie `next_reminder`
+  oben. Ein State-Trigger ohne `to:` auf dieser Entity reagiert
+  zuverlässig auf jede Erinnerung – siehe [Automationsbeispiele](#automationsbeispiele)
+  Nr. 6 für eine vollständige Push-Benachrichtigung. Die personenbezogene
+  Variante feuert nur für Erinnerungen zu Terminen dieser Person.
 - `sensor.homeroster_next_birthday` – nächster Termin der Kategorie
   „Geburtstag“, sofern vorhanden.
 - `binary_sensor.homeroster_event_active` / `..._event_active_<person>`
@@ -403,6 +421,18 @@ Vollständige, kopierfertige Beispiele stehen in
 4. LED-Hinweis bei Terminstart (`homeroster_event_started`).
 5. Termin automatisch als erledigt markieren, wenn er endet
    (`homeroster_event_ended` + `homeroster.set_event_status`).
+6. Push-Benachrichtigung für jede Erinnerung (Titel, wer, Vorlaufzeit, Tippen
+   öffnet das Dashboard), aufgebaut auf `sensor.homeroster_reminder_due`
+   statt dem Event-Bus – siehe [Entities, Sensoren und
+   Services](#entities-sensoren-und-services) oben, warum dieser Sensor
+   zusätzlich zu `homeroster_reminder_due` existiert.
+
+Hinweis zum Tippen-und-öffnen: Die `clickAction` einer Benachrichtigung kann
+das Dashboard/die View mit der Karte öffnen (so macht es Beispiel 6), aber
+Home Assistant hat keinen eingebauten Weg, direkt zu *einem bestimmten*
+Termin-Detaildialog zu springen – dafür müsste die Karte selbst eine
+Termin-ID aus der URL lesen und diesen Termin beim Laden automatisch öffnen,
+was sie aktuell nicht tut.
 
 Template-Beispiele für Dashboard-Text (siehe auch
 [`docs/dashboards.yaml`](docs/dashboards.yaml)):

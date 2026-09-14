@@ -93,3 +93,40 @@
       data:
         event_id: "{{ trigger.event.data.event_id }}"
         status: done
+
+# 6) Push notification for every reminder, with full event/person details
+#    and a tap-to-open action - built on sensor.homeroster_reminder_due
+#    (or the per-person sensor.homeroster_reminder_due_<person> variant)
+#    instead of the homeroster_reminder_due bus event used in example 2.
+#    The sensor's state is a fresh timestamp every single time a reminder
+#    fires (by design - see the README), so a plain State Trigger with no
+#    "to:" reliably fires once per reminder, even if two become due in the
+#    same scheduler tick. All the details an automation needs are already
+#    on the sensor as attributes, so no separate template lookup is needed.
+#    Adjust notify.mobile_app_<device> to a real target (Settings ->
+#    People -> your person -> which device to notify), and the "path"
+#    below to wherever your HomeRoster card actually lives.
+- alias: "HomeRoster - Push notification per reminder"
+  trigger:
+    - trigger: state
+      entity_id: sensor.homeroster_reminder_due
+  condition:
+    - condition: template
+      value_template: "{{ trigger.to_state.state not in ['unknown', 'unavailable'] }}"
+  action:
+    - action: notify.mobile_app_your_phone
+      data:
+        title: "{{ trigger.to_state.attributes.title }}"
+        message: >-
+          {% set persons = trigger.to_state.attributes.person_names | join(', ') %}
+          {{ 'Jetzt' if trigger.to_state.attributes.offset_minutes == 0
+             else trigger.to_state.attributes.offset_minutes ~ ' Min. vorher' }}
+          {{ ' - ' ~ persons if persons }}
+        data:
+          # Opens the dashboard/view that hosts the HomeRoster card when the
+          # notification is tapped. Home Assistant itself has no built-in
+          # "jump straight to this one event" deep link; the card would need
+          # to read an event_id from the URL and auto-open that event's
+          # detail dialog on load to go further than "open the calendar".
+          clickAction: "/lovelace/kalender"
+          tag: "homeroster-{{ trigger.to_state.attributes.event_id }}-{{ trigger.to_state.attributes.offset_minutes }}"

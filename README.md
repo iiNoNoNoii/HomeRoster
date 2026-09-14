@@ -360,6 +360,23 @@ so the storage file doesn't grow indefinitely.
   timestamp sensor; state = the ISO timestamp of the next (or currently
   running) event, or "unknown"; attributes include title, location,
   people, category.
+- `sensor.homeroster_next_reminder` / `..._next_reminder_<person>` – a
+  timestamp sensor; state = the due time of the *soonest upcoming
+  reminder*, not necessarily the reminder for the next event – a later
+  event with a longer lead time can be due before an earlier one with a
+  short lead time (e.g. a 15:00 event with a 60-minute reminder is due at
+  14:00, before a 14:30 event with only a 5-minute reminder). Meant for
+  dashboard display; attributes carry the event's title, start, location,
+  assigned people (`person_names`) and the reminder's `offset_minutes`.
+- `sensor.homeroster_reminder_due` / `..._reminder_due_<person>` – the
+  entity to build **notification automations** against: its state changes
+  to a fresh timestamp every single time a reminder actually fires (never
+  stuck "on", never skips a second reminder due in the same tick), with
+  the same attributes as `next_reminder` above. Trigger a State Trigger
+  with no `to:` on this entity to react to every reminder – see
+  [Automation examples](#automation-examples) #6 for a full push
+  notification example. The per-person variant only fires for reminders on
+  events that person is assigned to.
 - `sensor.homeroster_next_birthday` – the next event in the
   "Birthday" category, if any.
 - `binary_sensor.homeroster_event_active` /
@@ -397,6 +414,17 @@ Complete, copy-ready examples are in
 4. An LED hint when an event starts (`homeroster_event_started`).
 5. Automatically marking an event done when it ends
    (`homeroster_event_ended` + `homeroster.set_event_status`).
+6. A push notification for every reminder (title, who, lead time, tap to
+   open the dashboard), built on `sensor.homeroster_reminder_due` instead
+   of the bus event – see [Entities, sensors and
+   services](#entities-sensors-and-services) above for why that sensor
+   exists alongside `homeroster_reminder_due`.
+
+Note on tap-to-open: a notification's `clickAction` can open the dashboard
+view that hosts the card (example #6 does this), but Home Assistant has no
+built-in way to deep-link straight into *one specific event's* detail
+dialog – that would require the card itself to read an event ID from the
+URL and auto-open that event on load, which it doesn't do today.
 
 Template examples for dashboard text (see also
 [`docs/dashboards.yaml`](docs/dashboards.yaml)):

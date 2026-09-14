@@ -90,6 +90,22 @@ class EventOccurrence(NamedTuple):
         return f"{self.event.id}:{self.recurrence_id or 'single'}"
 
 
+class ReminderOccurrence(NamedTuple):
+    """A single not-yet-fired reminder for an occurrence, with its due time.
+
+    Distinct from EventOccurrence's own start/end: an event's *reminder* can
+    become due before an *earlier-starting* event's reminder does, if the
+    later event has a longer lead time configured (e.g. a 15:00 event with a
+    60-minute reminder is due at 14:00, before a 14:30 event with only a
+    5-minute reminder, due at 14:25) - get_next_event() alone cannot answer
+    "what should I be reminded of next", only get_next_reminder() can.
+    """
+
+    occurrence: EventOccurrence
+    offset: int
+    due_at: dt.datetime
+
+
 class HomeRosterCoordinator:
     """Owns HomeRoster data, persistence, recurrence and scheduling."""
 
@@ -102,6 +118,7 @@ class HomeRosterCoordinator:
         self._events: dict[str, Event] = {}
         self._fired_reminders: dict[str, str] = {}
         self._listeners: list[Callable[[], None]] = []
+        self._reminder_listeners: list[Callable[[EventOccurrence, int, dt.datetime], None]] = []
         self._unsub_tick: Callable[[], None] | None = None
         self._active_keys: set[str] = set()
         self._last_local_date: dt.date | None = None
@@ -149,6 +166,24 @@ class HomeRosterCoordinator:
     def async_update_listeners(self) -> None:
         for callback_ in list(self._listeners):
             callback_()
+
+    def async_add_reminder_listener(
+        self, listener: Callable[[EventOccurrence, int, dt.datetime], None]
+    ) -> Callable[[], None]:
+        """Register a callback invoked once for each reminder as it becomes
+        due - (occurrence, offset_minutes, due_at). Unlike async_add_listener
+        (which just signals "something changed, re-read current state"),
+        this fires with the specific reminder that just triggered, which is
+        what lets sensor.py's "reminder due" sensor produce one distinct,
+        automation-triggerable state change per reminder instead of a
+        generic refresh. Returns an unsubscribe callable."""
+        self._reminder_listeners.append(listener)
+
+        def _remove() -> None:
+            if listener in self._reminder_listeners:
+                self._reminder_listeners.remove(listener)
+
+        return _remove
 
     # ------------------------------------------------------------------
     # Persistence
@@ -599,6 +634,39 @@ class HomeRosterCoordinator:
         upcoming = [occ for occ in occurrences if occ.end > now]
         return upcoming[0] if upcoming else None
 
+    def get_next_reminder(self, person_id: str | None = None) -> ReminderOccurrence | None:
+        """The soonest not-yet-fired reminder, across all upcoming occurrences.
+
+        Not the same as "the reminder for get_next_event()": a later event
+        with a longer lead time can be due for a reminder before an
+        earlier-starting event with a short lead time - see
+        ReminderOccurrence's docstring for the concrete example. Bounded by
+        REMINDER_LOOKAHEAD_HOURS, same as _check_reminders() itself, so this
+        never reports something as "next" that the scheduler wouldn't also
+        be about to act on.
+        """
+        now = dt_util.utcnow()
+        window_end = now + dt.timedelta(hours=REMINDER_LOOKAHEAD_HOURS)
+        occurrences = self._all_occurrences(
+            now,
+            window_end,
+            person_ids=[person_id] if person_id else None,
+            include_cancelled=False,
+        )
+        candidates: list[ReminderOccurrence] = []
+        for occ in occurrences:
+            for offset in occ.event.reminders:
+                due_at = occ.start - dt.timedelta(minutes=offset)
+                if due_at < now:
+                    continue
+                key = f"{occ.occurrence_key()}:{offset}"
+                if key in self._fired_reminders:
+                    continue
+                candidates.append(ReminderOccurrence(occ, offset, due_at))
+        if not candidates:
+            return None
+        return min(candidates, key=lambda c: c.due_at)
+
     def get_active_events(self, person_id: str | None = None) -> list[EventOccurrence]:
         now = dt_util.utcnow()
         occurrences = self._all_occurrences(
@@ -739,6 +807,8 @@ class HomeRosterCoordinator:
                     )
                     if send_notifications:
                         await self._async_send_reminder_notifications(occ, offset)
+                    for listener in list(self._reminder_listeners):
+                        listener(occ, offset, now)
                 else:
                     _LOGGER.debug(
                         "HomeRoster: Erinnerung für Termin %s (Offset %s Min.) nach "
