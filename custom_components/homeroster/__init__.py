@@ -20,6 +20,7 @@ except ImportError:  # pragma: no cover - unreachable on any HA >= min_ha_versio
     from homeassistant.exceptions import HomeAssistantError as ServiceValidationError
 from homeassistant.util import dt as dt_util
 
+from .backup import BackupManager
 from .const import (
     ATTR_ALL_DAY,
     ATTR_CATEGORY_ID,
@@ -40,12 +41,15 @@ from .const import (
     DOMAIN,
     EVENT_STATUSES,
     PLATFORMS,
+    SERVICE_CREATE_BACKUP,
     SERVICE_CREATE_EVENT,
     SERVICE_DELETE_EVENT,
     SERVICE_DUPLICATE_EVENT,
     SERVICE_GET_EVENTS,
     SERVICE_GET_NEXT_EVENT,
     SERVICE_GET_TODAY_EVENTS,
+    SERVICE_LIST_BACKUPS,
+    SERVICE_RESTORE_BACKUP,
     SERVICE_SET_EVENT_STATUS,
     SERVICE_UPDATE_EVENT,
 )
@@ -125,6 +129,16 @@ DUPLICATE_EVENT_SCHEMA = vol.Schema(
 SET_STATUS_SCHEMA = vol.Schema(
     {vol.Required(ATTR_EVENT_ID): str, vol.Required(ATTR_STATUS): vol.In(EVENT_STATUSES)}
 )
+CREATE_BACKUP_SCHEMA = vol.Schema({})
+LIST_BACKUPS_SCHEMA = vol.Schema({})
+RESTORE_BACKUP_SCHEMA = vol.Schema(
+    {
+        vol.Required("filename"): str,
+        vol.Optional("conflict_strategy", default="skip"): vol.In(
+            ["skip", "replace", "duplicate"]
+        ),
+    }
+)
 
 
 def _get_any_coordinator(hass: HomeAssistant) -> HomeRosterCoordinator:
@@ -133,6 +147,15 @@ def _get_any_coordinator(hass: HomeAssistant) -> HomeRosterCoordinator:
         raise ServiceValidationError("HomeRoster ist nicht geladen.")
     for entry_data in domain_data.values():
         return entry_data["coordinator"]
+    raise ServiceValidationError("HomeRoster ist nicht geladen.")
+
+
+def _get_any_backup_manager(hass: HomeAssistant) -> BackupManager:
+    domain_data = hass.data.get(DOMAIN)
+    if not domain_data:
+        raise ServiceValidationError("HomeRoster ist nicht geladen.")
+    for entry_data in domain_data.values():
+        return entry_data["backup_manager"]
     raise ServiceValidationError("HomeRoster ist nicht geladen.")
 
 
@@ -225,6 +248,25 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
             raise ServiceValidationError(str(err)) from err
         return {"event": event.to_dict()} if call.return_response else None
 
+    async def handle_create_backup(call: ServiceCall) -> ServiceResponse:
+        backup_manager = _get_any_backup_manager(hass)
+        filename = await backup_manager.async_create_backup()
+        return {"filename": filename} if call.return_response else None
+
+    async def handle_list_backups(call: ServiceCall) -> ServiceResponse:
+        backup_manager = _get_any_backup_manager(hass)
+        return {"backups": await backup_manager.async_list_backups()}
+
+    async def handle_restore_backup(call: ServiceCall) -> ServiceResponse:
+        backup_manager = _get_any_backup_manager(hass)
+        try:
+            result = await backup_manager.async_restore_backup(
+                call.data["filename"], call.data.get("conflict_strategy", "skip")
+            )
+        except HomeRosterError as err:
+            raise ServiceValidationError(str(err)) from err
+        return result if call.return_response else None
+
     hass.services.async_register(
         DOMAIN,
         SERVICE_CREATE_EVENT,
@@ -271,6 +313,27 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
         SERVICE_SET_EVENT_STATUS,
         handle_set_event_status,
         SET_STATUS_SCHEMA,
+        SupportsResponse.OPTIONAL,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_CREATE_BACKUP,
+        handle_create_backup,
+        CREATE_BACKUP_SCHEMA,
+        SupportsResponse.OPTIONAL,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_LIST_BACKUPS,
+        handle_list_backups,
+        LIST_BACKUPS_SCHEMA,
+        SupportsResponse.ONLY,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_RESTORE_BACKUP,
+        handle_restore_backup,
+        RESTORE_BACKUP_SCHEMA,
         SupportsResponse.OPTIONAL,
     )
     hass.data[f"{DOMAIN}_services_registered"] = True
@@ -398,7 +461,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     coordinator = HomeRosterCoordinator(hass, entry)
     await coordinator.async_load()
 
-    hass.data[DOMAIN][entry.entry_id] = {"coordinator": coordinator}
+    backup_manager = BackupManager(hass, entry, coordinator)
+    backup_manager.async_start()
+
+    hass.data[DOMAIN][entry.entry_id] = {
+        "coordinator": coordinator,
+        "backup_manager": backup_manager,
+    }
 
     device_registry = dr.async_get(hass)
     device_registry.async_get_or_create(
@@ -426,5 +495,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
         entry_data = hass.data[DOMAIN].pop(entry.entry_id)
+        entry_data["backup_manager"].async_stop()
         await entry_data["coordinator"].async_unload()
     return unload_ok

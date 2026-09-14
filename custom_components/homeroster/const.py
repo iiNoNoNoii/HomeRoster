@@ -28,6 +28,9 @@ CONF_DEFAULT_COLORS: Final = "default_colors"
 CONF_DEFAULT_ICONS: Final = "default_icons"
 CONF_LANGUAGE: Final = "language"
 CONF_SEND_MOBILE_NOTIFICATIONS: Final = "send_mobile_notifications"
+CONF_BACKUP_ENABLED: Final = "backup_enabled"
+CONF_BACKUP_INTERVAL_DAYS: Final = "backup_interval_days"
+CONF_BACKUP_RETENTION_COUNT: Final = "backup_retention_count"
 
 DEFAULT_REQUIRE_PERSON: Final = True
 DEFAULT_ENABLE_STATUS: Final = True
@@ -40,6 +43,18 @@ DEFAULT_REMINDER_MINUTES: Final = 60
 DEFAULT_LANGUAGE: Final = "auto"
 DEFAULT_SEND_MOBILE_NOTIFICATIONS: Final = True
 FIRED_REMINDER_RETENTION_HOURS: Final = 48
+DEFAULT_BACKUP_ENABLED: Final = True
+DEFAULT_BACKUP_INTERVAL_DAYS: Final = 1
+# 0 = keep every backup forever (never auto-delete); any positive N keeps
+# only the N most recent backups, deleting older ones as new ones are made.
+DEFAULT_BACKUP_RETENTION_COUNT: Final = 14
+# Plain folder directly under Home Assistant's config/ directory (i.e.
+# alongside configuration.yaml), deliberately *not* inside .storage/: it
+# must survive things that only threaten this integration specifically -
+# an accidental removal/reinstall, a bad update, a corrupted .storage file -
+# and stay something the user can also find, copy or include in their own
+# separate backup solution without needing to understand HA's internals.
+BACKUP_DIR_NAME: Final = "homeroster_backups"
 
 # Options flow actions
 ACTION_ADD: Final = "add"
@@ -123,6 +138,9 @@ SERVICE_GET_TODAY_EVENTS: Final = "get_today_events"
 SERVICE_GET_NEXT_EVENT: Final = "get_next_event"
 SERVICE_DUPLICATE_EVENT: Final = "duplicate_event"
 SERVICE_SET_EVENT_STATUS: Final = "set_event_status"
+SERVICE_CREATE_BACKUP: Final = "create_backup"
+SERVICE_LIST_BACKUPS: Final = "list_backups"
+SERVICE_RESTORE_BACKUP: Final = "restore_backup"
 
 ATTR_EVENT_ID: Final = "event_id"
 ATTR_TITLE: Final = "title"

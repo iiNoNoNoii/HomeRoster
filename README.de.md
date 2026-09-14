@@ -398,7 +398,8 @@ alle Felder und Selektoren):
 
 `create_event`, `update_event`, `delete_event`, `get_events`,
 `get_today_events`, `get_next_event`, `duplicate_event`,
-`set_event_status`.
+`set_event_status`, `create_backup`, `list_backups`, `restore_backup`
+(siehe [Backup, Import und Export](#backup-import-und-export)).
 
 **Events auf dem Event-Bus:** `homeroster_event_created`,
 `homeroster_event_updated`, `homeroster_event_deleted`,
@@ -472,21 +473,46 @@ für „Heute“-Kachel, „Nächster Termin“-Kachel und Personenkachel.
 
 ## Backup, Import und Export
 
-Alle Daten liegen unter `<config>/.storage/homeroster_<entry_id>` und
-sind damit automatisch Teil jedes regulären Home-Assistant-Backups.
+Die regulären Daten liegen unter `<config>/.storage/homeroster_<entry_id>`
+und sind damit automatisch Teil jedes vollständigen Home-Assistant-Backups.
+Zusätzlich kann HomeRoster eigene, **unabhängige** Backups pflegen – reine
+JSON-Momentaufnahmen unter `<config>/homeroster_backups/`, bewusst
+außerhalb von `.storage/`, damit sie genau die Dinge überstehen, die
+speziell dieser Integration gefährlich werden können: eine versehentliche
+Entfernung/Neuinstallation, ein fehlgeschlagenes Update oder eine defekte
+`.storage`-Datei.
 
-Zusätzlich bietet die Karte (Administrator) **JSON-Export** und
-**JSON-Import** über die Personenverwaltungs-/Einstellungsdialoge bzw.
-direkt über die WebSocket-Actions `homeroster/export_json` und
-`homeroster/import_json`:
+**Einstellungen → Geräte & Dienste → HomeRoster → Konfigurieren →
+Automatische Backups:**
 
-- Export liefert Personen, Kategorien und Termine als ein JSON-Dokument.
-- Import validiert jeden Eintrag serverseitig; fehlerhafte Einträge werden
-  übersprungen und im Ergebnis aufgelistet, statt den gesamten Import
-  abzubrechen.
-- Bei einer Termin-ID, die bereits existiert, wählst du eine
-  Konfliktstrategie: **überspringen** (Standard), **ersetzen** oder
-  **duplizieren** (neue ID). Es wird nie stillschweigend überschrieben.
+| Einstellung | Bedeutung |
+| --- | --- |
+| Backups automatisch erstellen | Standardmäßig an. |
+| Intervall (Tage) | Wie oft automatisch ein neues Backup erstellt wird (stündlich geprüft; eine verpasste Prüfung nach einer Downtime wird innerhalb einer Stunde nach dem nächsten Neustart nachgeholt). |
+| Die letzten N Backups behalten | Ältere Backups über dieser Anzahl hinaus werden nach jedem neuen automatisch gelöscht. **0 = alle Backups für immer behalten.** |
+
+**Aktionen auf Abruf** (Entwicklerwerkzeuge → Aktionen, eine
+Automatisierung oder ein Dashboard-Button – bewusst keine Formularfelder,
+da es sich um einmalige Aktionen handelt, nicht um dauerhafte
+Einstellungen):
+
+- `homeroster.create_backup` – erstellt sofort ein Backup.
+- `homeroster.list_backups` – listet vorhandene Backups (Dateiname, Größe,
+  Zeitstempel), neueste zuerst.
+- `homeroster.restore_backup` – importiert ein Backup anhand des
+  Dateinamens, mit derselben Konfliktstrategie **überspringen / ersetzen /
+  duplizieren** wie unten. Funktioniert identisch für ein selbst erstelltes
+  Backup *oder* eines von einer fremden HomeRoster-Instanz – dazu einfach
+  deren Datei zuerst nach `homeroster_backups/` kopieren (z. B. über das
+  File-Editor-Add-on, Samba oder SSH) und anschließend anhand des
+  Dateinamens wiederherstellen.
+
+Jede Wiederherstellung validiert jeden Eintrag serverseitig; fehlerhafte
+Einträge werden übersprungen und im Ergebnis aufgelistet, statt den
+gesamten Import abzubrechen. Bei einer Termin-ID, die bereits existiert,
+entscheidet die Konfliktstrategie: **überspringen** (Standard),
+**ersetzen** oder **duplizieren** (neue ID) – es wird nie stillschweigend
+überschrieben.
 
 **ICS-Import/-Export ist nicht Teil dieser Auslieferung** (siehe
 [Bekannte Einschränkungen](#bekannte-einschränkungen)).

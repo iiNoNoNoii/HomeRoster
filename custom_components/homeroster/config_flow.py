@@ -19,6 +19,9 @@ from .const import (
     ACTION_MOVE_UP,
     CARD_LANGUAGES,
     CONF_ALLOW_NON_ADMIN_WRITE,
+    CONF_BACKUP_ENABLED,
+    CONF_BACKUP_INTERVAL_DAYS,
+    CONF_BACKUP_RETENTION_COUNT,
     CONF_DEFAULT_COLORS,
     CONF_DEFAULT_ICONS,
     CONF_DEFAULT_REMINDER_MINUTES,
@@ -31,6 +34,9 @@ from .const import (
     CONF_SEND_MOBILE_NOTIFICATIONS,
     CONF_TODAY_SENSOR_LIMIT,
     DEFAULT_ALLOW_NON_ADMIN_WRITE,
+    DEFAULT_BACKUP_ENABLED,
+    DEFAULT_BACKUP_INTERVAL_DAYS,
+    DEFAULT_BACKUP_RETENTION_COUNT,
     DEFAULT_COLORS,
     DEFAULT_ENABLE_CATEGORIES,
     DEFAULT_ENABLE_STATUS,
@@ -198,7 +204,7 @@ class HomeRosterOptionsFlow(config_entries.OptionsFlow):
     ) -> config_entries.ConfigFlowResult:
         return self.async_show_menu(
             step_id="init",
-            menu_options=["settings", "people", "categories"],
+            menu_options=["settings", "people", "categories", "backup"],
         )
 
     # ------------------------------------------------------------------
@@ -268,6 +274,45 @@ class HomeRosterOptionsFlow(config_entries.OptionsFlow):
             new_options.update(user_input)
             return self.async_create_entry(title="", data=new_options)
         return self.async_show_form(step_id="settings", data_schema=schema)
+
+    # ------------------------------------------------------------------
+    # Backups
+    # ------------------------------------------------------------------
+
+    async def async_step_backup(
+        self, user_input: dict[str, Any] | None = None
+    ) -> config_entries.ConfigFlowResult:
+        """Automatic-backup settings. Manual/on-demand actions (create a
+        backup right now, list existing backups, restore one) are exposed
+        as services (homeroster.create_backup / list_backups /
+        restore_backup, see services.yaml) rather than form fields here -
+        an options flow form is for persisted settings, not one-off
+        actions, and services are directly callable from Developer Tools,
+        automations or a dashboard button without needing this dialog."""
+        options = self.config_entry.options
+        schema = vol.Schema(
+            {
+                vol.Required(
+                    CONF_BACKUP_ENABLED,
+                    default=options.get(CONF_BACKUP_ENABLED, DEFAULT_BACKUP_ENABLED),
+                ): bool,
+                vol.Required(
+                    CONF_BACKUP_INTERVAL_DAYS,
+                    default=options.get(CONF_BACKUP_INTERVAL_DAYS, DEFAULT_BACKUP_INTERVAL_DAYS),
+                ): vol.All(int, vol.Range(min=1, max=365)),
+                vol.Required(
+                    CONF_BACKUP_RETENTION_COUNT,
+                    default=options.get(
+                        CONF_BACKUP_RETENTION_COUNT, DEFAULT_BACKUP_RETENTION_COUNT
+                    ),
+                ): vol.All(int, vol.Range(min=0, max=1000)),
+            }
+        )
+        if user_input is not None:
+            new_options = dict(self.config_entry.options)
+            new_options.update(user_input)
+            return self.async_create_entry(title="", data=new_options)
+        return self.async_show_form(step_id="backup", data_schema=schema)
 
     # ------------------------------------------------------------------
     # People

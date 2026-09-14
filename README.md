@@ -391,7 +391,8 @@ all fields and selectors):
 
 `create_event`, `update_event`, `delete_event`, `get_events`,
 `get_today_events`, `get_next_event`, `duplicate_event`,
-`set_event_status`.
+`set_event_status`, `create_backup`, `list_backups`, `restore_backup`
+(see [Backup, import and export](#backup-import-and-export)).
 
 **Events on the event bus:** `homeroster_event_created`,
 `homeroster_event_updated`, `homeroster_event_deleted`,
@@ -465,21 +466,42 @@ event" tile and a per-person tile.
 
 ## Backup, import and export
 
-All data lives under `<config>/.storage/homeroster_<entry_id>`, so
-it's automatically part of every regular Home Assistant backup.
+The regular data lives under `<config>/.storage/homeroster_<entry_id>`, so
+it's automatically part of every full Home Assistant backup. On top of
+that, HomeRoster can maintain its own **independent** backups – plain JSON
+snapshot files under `<config>/homeroster_backups/`, deliberately outside
+`.storage/` so they survive things that specifically threaten this
+integration: an accidental removal/reinstall, a bad update, or a corrupted
+`.storage` file.
 
-In addition, the card (for administrators) offers **JSON export** and
-**JSON import** via the people-management/settings dialogs, or directly
-via the WebSocket actions `homeroster/export_json` and
-`homeroster/import_json`:
+**Settings → Devices & Services → HomeRoster → Configure → Automatic
+backups:**
 
-- Export produces people, categories and events as a single JSON
-  document.
-- Import validates every entry server-side; invalid entries are skipped
-  and listed in the result instead of aborting the entire import.
-- If an event ID already exists, you choose a conflict strategy: **skip**
-  (default), **replace**, or **duplicate** (new ID). Nothing is ever
-  silently overwritten.
+| Setting | Meaning |
+| --- | --- |
+| Create backups automatically | On by default. |
+| Interval (days) | How often a new automatic backup is made (checked hourly; a missed check after downtime is caught up within an hour of the next restart). |
+| Keep the last N backups | Older backups beyond this count are deleted automatically after each new one. **0 = keep every backup forever.** |
+
+**On-demand actions** (Developer tools → Actions, an automation, or a
+dashboard button – not form fields, since these are one-off actions, not
+persisted settings):
+
+- `homeroster.create_backup` – create a backup right now.
+- `homeroster.list_backups` – list existing backups (filename, size,
+  timestamp), newest first.
+- `homeroster.restore_backup` – import a backup by filename, with the same
+  **skip / replace / duplicate** conflict strategy as below. Works
+  identically for a backup this instance created itself *or* one from
+  someone else's HomeRoster instance – just copy their file into
+  `homeroster_backups/` first (e.g. via the File editor add-on, Samba, or
+  SSH), then restore it by its filename.
+
+Every restore validates each entry server-side; invalid entries are
+skipped and listed in the result instead of aborting the whole import. If
+an event ID already exists, the conflict strategy decides what happens:
+**skip** (default), **replace**, or **duplicate** (new ID) – nothing is
+ever silently overwritten.
 
 **ICS import/export is not part of this release** (see [Known
 limitations](#known-limitations)).

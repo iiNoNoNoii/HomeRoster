@@ -273,3 +273,48 @@ set_event_status:
             - tentative
             - done
             - cancelled
+
+create_backup:
+  name: Backup erstellen
+  description: >-
+    Erstellt sofort ein Backup (Personen, Kategorien, Termine) unter
+    config/homeroster_backups/ und wendet danach die Aufbewahrungs-Einstellung
+    an (siehe Integrationseinstellungen -> Automatische Backups).
+
+list_backups:
+  name: Backups auflisten
+  description: >-
+    Liefert alle vorhandenen Backup-Dateien zurück (Dateiname, Größe,
+    Änderungszeitpunkt), neueste zuerst - auch nützlich, um den genauen
+    Dateinamen für restore_backup herauszufinden.
+
+restore_backup:
+  name: Backup wiederherstellen
+  description: >-
+    Importiert eine Backup-Datei. Funktioniert auch mit einer Datei von einer
+    anderen HomeRoster-Instanz - dazu die Datei vorher manuell nach
+    config/homeroster_backups/ kopieren.
+  fields:
+    filename:
+      name: Dateiname
+      description: >-
+        Nur der Dateiname (kein Pfad), z. B. wie von list_backups
+        zurückgegeben.
+      required: true
+      example: homeroster-backup-20260920-030000.json
+      selector:
+        text:
+    conflict_strategy:
+      name: Konfliktstrategie
+      description: >-
+        Verhalten bei Terminen, deren ID bereits existiert: "skip"
+        überspringt sie, "replace" überschreibt sie, "duplicate" legt sie
+        mit neuer ID zusätzlich an. Personen/Kategorien werden immer anhand
+        ihrer ID überschrieben bzw. neu angelegt.
+      default: skip
+      selector:
+        select:
+          options:
+            - skip
+            - replace
+            - duplicate

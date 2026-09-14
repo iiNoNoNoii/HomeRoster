@@ -17,7 +17,8 @@
         "menu_options": {
           "settings": "General settings",
           "people": "Manage people",
-          "categories": "Manage categories"
+          "categories": "Manage categories",
+          "backup": "Automatic backups"
         }
       },
       "settings": {
@@ -35,6 +36,15 @@
           "default_icons": "Default icons (comma-separated, MDI)",
           "language": "Card language",
           "send_mobile_notifications": "Send reminders via the Home Assistant app to people with a configured notification target"
+        }
+      },
+      "backup": {
+        "title": "Automatic backups",
+        "description": "Plain JSON snapshots of all people/categories/events, saved to config/homeroster_backups/ - independent of this integration's own storage, so they survive an accidental removal or a bad update. To create, list or restore a backup on demand (including one from another instance - just place its file in that folder first), use the homeroster.create_backup / list_backups / restore_backup actions (Developer tools -> Actions).",
+        "data": {
+          "backup_enabled": "Create backups automatically",
+          "backup_interval_days": "Interval (days)",
+          "backup_retention_count": "Keep the last N backups (0 = keep all forever)"
         }
       },
       "people": {

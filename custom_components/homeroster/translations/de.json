@@ -17,7 +17,8 @@
         "menu_options": {
           "settings": "Allgemeine Einstellungen",
           "people": "Personen verwalten",
-          "categories": "Kategorien verwalten"
+          "categories": "Kategorien verwalten",
+          "backup": "Automatische Backups"
         }
       },
       "settings": {
@@ -35,6 +36,15 @@
           "default_icons": "Standard-Icons (kommagetrennt, MDI)",
           "language": "Kartensprache",
           "send_mobile_notifications": "Erinnerungen per Home Assistant App an Personen mit hinterlegtem Benachrichtigungsziel senden"
+        }
+      },
+      "backup": {
+        "title": "Automatische Backups",
+        "description": "Reine JSON-Momentaufnahmen aller Personen/Kategorien/Termine, gespeichert unter config/homeroster_backups/ - unabhängig vom eigenen Speicher dieser Integration, damit sie eine versehentliche Entfernung oder ein fehlgeschlagenes Update überstehen. Um ein Backup gezielt zu erstellen, aufzulisten oder wiederherzustellen (auch eines von einer anderen Instanz - einfach die Datei vorher in diesen Ordner legen), die Aktionen homeroster.create_backup / list_backups / restore_backup nutzen (Entwicklerwerkzeuge -> Aktionen).",
+        "data": {
+          "backup_enabled": "Backups automatisch erstellen",
+          "backup_interval_days": "Intervall (Tage)",
+          "backup_retention_count": "Die letzten N Backups behalten (0 = alle für immer behalten)"
         }
       },
       "people": {
