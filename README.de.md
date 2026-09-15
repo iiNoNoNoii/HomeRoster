@@ -7,9 +7,13 @@ ohne Cloud-Dienst, ohne externen Account, ohne Internetverbindung im
 Normalbetrieb. HomeRoster besteht aus einer Custom Integration (Python)
 als Backend und einer eigenen Lovelace-Karte (TypeScript/Lit) als Frontend.
 
-> **Kein Google Calendar, kein iCloud, kein Homsy-Cloud-Dienst nötig.** Alle
-> Termine, Personen und Kategorien werden ausschließlich in Home Assistants
-> eigenem Storage gespeichert.
+> **Kein Google Calendar, kein iCloud, kein Cloud-Dienst eines Anbieters
+> nötig.** Alle Termine, Personen und Kategorien werden ausschließlich in
+> Home Assistants eigenem Storage gespeichert.
+
+*HomeRoster ist ein unabhängiges, von der Community gepflegtes Projekt. Es
+steht in keiner Verbindung zu Nabu Casa oder dem Home-Assistant-Projekt und
+wird von diesen weder unterstützt noch empfohlen.*
 
 [![Buy Me A Coffee](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://buymeacoffee.com/iinononoii)
 
@@ -763,3 +767,7 @@ Wird eine modifizierte Version über ein Netzwerk (z. B. als Teil einer
 Home-Assistant-Instanz) bereitgestellt, muss der Quellcode dieser
 modifizierten Version den Nutzern zugänglich gemacht werden (siehe
 Abschnitt 13 der Lizenz).
+
+Fremdsoftware, die dieses Projekt nutzt (gebündelt oder als
+Laufzeit-Abhängigkeit), ist mit ihrer jeweiligen Lizenz in
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) aufgeführt.

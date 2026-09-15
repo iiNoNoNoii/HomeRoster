@@ -11,6 +11,10 @@ backend and its own Lovelace card (TypeScript/Lit) as the frontend.
 > events, people and categories are stored exclusively in Home Assistant's
 > own storage.
 
+*HomeRoster is an independent, community-maintained project. It is not
+affiliated with, endorsed by, or supported by Nabu Casa or the Home
+Assistant project.*
+
 [![Buy Me A Coffee](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://buymeacoffee.com/iinononoii)
 
 ## Contents
@@ -741,3 +745,7 @@ GNU Affero General Public License v3.0 (AGPL-3.0), see
 (e.g. as part of a Home Assistant instance), the source code of that
 modified version must be made available to its users (see section 13 of
 the license).
+
+Third-party software this project uses (bundled or as a runtime
+dependency) is listed with its own license in
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).

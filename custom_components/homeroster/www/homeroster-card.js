@@ -2144,4 +2144,111 @@
             ></homeroster-category-manager-dialog>
           `:c}
     `}};_.styles=nr,d([u()],_.prototype,"_config",2),d([u()],_.prototype,"_view",2),d([u()],_.prototype,"_currentDate",2),d([u()],_.prototype,"_events",2),d([u()],_.prototype,"_wideRangeEvents",2),d([u()],_.prototype,"_people",2),d([u()],_.prototype,"_categories",2),d([u()],_.prototype,"_loading",2),d([u()],_.prototype,"_error",2),d([u()],_.prototype,"_connectionLost",2),d([u()],_.prototype,"_search",2),d([u()],_.prototype,"_selectedPersonIds",2),d([u()],_.prototype,"_selectedCategoryIds",2),d([u()],_.prototype,"_filtersExpanded",2),d([u()],_.prototype,"_canWriteEvents",2),d([u()],_.prototype,"_isAdmin",2),d([u()],_.prototype,"_requirePerson",2),d([u()],_.prototype,"_enableCategories",2),d([u()],_.prototype,"_enableStatus",2),d([u()],_.prototype,"_language",2),d([u()],_.prototype,"_defaultReminderMinutes",2),d([u()],_.prototype,"_defaultColors",2),d([u()],_.prototype,"_defaultIcons",2),d([u()],_.prototype,"_createDraft",2),d([u()],_.prototype,"_editingEvent",2),d([u()],_.prototype,"_dialogError",2),d([u()],_.prototype,"_detailEvent",2),d([u()],_.prototype,"_dayDetail",2),d([u()],_.prototype,"_peopleManagerOpen",2),d([u()],_.prototype,"_categoryManagerOpen",2),_=d([A("homeroster-card")],_);window.customCards=window.customCards||[];window.customCards.push({type:"homeroster-card",name:"HomeRoster",description:"Lokaler Familienkalender mit Personen, Kategorien und \xDCberlappungs-Ansicht.",preview:!0});})();
+/*! Bundled license information:
+
+@lit/reactive-element/css-tag.js:
+  (**
+   * @license
+   * Copyright 2019 Google LLC
+   * SPDX-License-Identifier: BSD-3-Clause
+   *)
+
+@lit/reactive-element/reactive-element.js:
+  (**
+   * @license
+   * Copyright 2017 Google LLC
+   * SPDX-License-Identifier: BSD-3-Clause
+   *)
+
+lit-html/lit-html.js:
+  (**
+   * @license
+   * Copyright 2017 Google LLC
+   * SPDX-License-Identifier: BSD-3-Clause
+   *)
+
+lit-element/lit-element.js:
+  (**
+   * @license
+   * Copyright 2017 Google LLC
+   * SPDX-License-Identifier: BSD-3-Clause
+   *)
+
+lit-html/is-server.js:
+  (**
+   * @license
+   * Copyright 2022 Google LLC
+   * SPDX-License-Identifier: BSD-3-Clause
+   *)
+
+@lit/reactive-element/decorators/custom-element.js:
+  (**
+   * @license
+   * Copyright 2017 Google LLC
+   * SPDX-License-Identifier: BSD-3-Clause
+   *)
+
+@lit/reactive-element/decorators/property.js:
+  (**
+   * @license
+   * Copyright 2017 Google LLC
+   * SPDX-License-Identifier: BSD-3-Clause
+   *)
+
+@lit/reactive-element/decorators/state.js:
+  (**
+   * @license
+   * Copyright 2017 Google LLC
+   * SPDX-License-Identifier: BSD-3-Clause
+   *)
+
+@lit/reactive-element/decorators/event-options.js:
+  (**
+   * @license
+   * Copyright 2017 Google LLC
+   * SPDX-License-Identifier: BSD-3-Clause
+   *)
+
+@lit/reactive-element/decorators/base.js:
+  (**
+   * @license
+   * Copyright 2017 Google LLC
+   * SPDX-License-Identifier: BSD-3-Clause
+   *)
+
+@lit/reactive-element/decorators/query.js:
+  (**
+   * @license
+   * Copyright 2017 Google LLC
+   * SPDX-License-Identifier: BSD-3-Clause
+   *)
+
+@lit/reactive-element/decorators/query-all.js:
+  (**
+   * @license
+   * Copyright 2017 Google LLC
+   * SPDX-License-Identifier: BSD-3-Clause
+   *)
+
+@lit/reactive-element/decorators/query-async.js:
+  (**
+   * @license
+   * Copyright 2017 Google LLC
+   * SPDX-License-Identifier: BSD-3-Clause
+   *)
+
+@lit/reactive-element/decorators/query-assigned-elements.js:
+  (**
+   * @license
+   * Copyright 2021 Google LLC
+   * SPDX-License-Identifier: BSD-3-Clause
+   *)
+
+@lit/reactive-element/decorators/query-assigned-nodes.js:
+  (**
+   * @license
+   * Copyright 2017 Google LLC
+   * SPDX-License-Identifier: BSD-3-Clause
+   *)
+*/
 //# sourceMappingURL=homeroster-card.js.map

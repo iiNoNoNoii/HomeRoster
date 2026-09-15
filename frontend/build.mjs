@@ -14,7 +14,13 @@ const options = {
   target: "es2021",
   minify: !watch,
   sourcemap: true,
-  legalComments: "none",
+  // "eof": preserves every bundled dependency's license comment (just Lit's,
+  // currently - see THIRD-PARTY-NOTICES.md) by appending them once at the
+  // end of the output file, rather than stripping them ("none") or leaving
+  // one inline per occurrence throughout the minified code ("inline").
+  // Redistributing Lit's source bundled into this file without its
+  // BSD-3-Clause notice attached would not satisfy that license's terms.
+  legalComments: "eof",
 };
 
 if (watch) {
