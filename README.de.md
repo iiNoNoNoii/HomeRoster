@@ -83,19 +83,11 @@ dieser README unter [Entwicklungsphasen](#entwicklungsphasen).
 
 ## Screenshots
 
-Diese README enthält bewusst keine eingebetteten Bilddateien – es gibt
-(noch) keine laufende Home-Assistant-Instanz, aus der sich für dieses
-Dokumentationspaket authentische Screenshots aufnehmen ließen, und
-erfundene Platzhalterbilder wären irreführend. So erstellst du eigene
-Screenshots für dein Repository:
+<img src="docs/screenshots/agenda-filters.jpg" alt="Agenda-Ansicht mit Personen- und Kategoriefiltern" width="320"> <img src="docs/screenshots/people.jpg" alt="Personenverwaltung" width="320"> <img src="docs/screenshots/categories.jpg" alt="Kategorienverwaltung" width="320">
 
-1. Karte in einem Dashboard einrichten (siehe unten) und mit ein paar
-   Beispielterminen füllen.
-2. Wochenansicht, Monatsansicht und den Termin-Dialog jeweils als PNG
-   sichern (Browser-Screenshot oder Home-Assistant-App).
-3. Dateien unter `docs/screenshots/` ablegen, z. B.
-   `docs/screenshots/week-view.png`, und hier mit
-   `![Wochenansicht](docs/screenshots/week-view.png)` einbinden.
+*Agenda-Ansicht mit aktiven Personen-/Kategoriefiltern, Personenverwaltung
+(mit Avataren aus verknüpften Home-Assistant-`person`-Entitäten) und
+Kategorienverwaltung — alle aus der Home-Assistant-Begleit-App.*
 
 ## Voraussetzungen
 

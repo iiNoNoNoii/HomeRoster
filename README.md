@@ -81,19 +81,11 @@ README under [Development phases](#development-phases).
 
 ## Screenshots
 
-This README deliberately contains no embedded image files – there is no
-live Home Assistant instance available for this documentation pass to
-capture authentic screenshots from, and fabricated placeholder images
-would be misleading. Here's how to add your own screenshots to your
-repository:
+<img src="docs/screenshots/agenda-filters.jpg" alt="Agenda view with person and category filters" width="320"> <img src="docs/screenshots/people.jpg" alt="People management dialog" width="320"> <img src="docs/screenshots/categories.jpg" alt="Category management dialog" width="320">
 
-1. Set up the card on a dashboard (see below) and fill it with a few
-   example events.
-2. Capture the week view, month view and the event dialog as PNG files
-   (browser screenshot or the Home Assistant app).
-3. Save the files under `docs/screenshots/`, e.g.
-   `docs/screenshots/week-view.png`, and embed them here with
-   `![Week view](docs/screenshots/week-view.png)`.
+*Agenda view with active person/category filters, people management (with
+avatars from linked Home Assistant `person` entities), and category
+management — all from the Home Assistant Companion App.*
 
 ## Requirements
 
