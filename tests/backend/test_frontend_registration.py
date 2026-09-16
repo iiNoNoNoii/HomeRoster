@@ -6,6 +6,7 @@ recovery short of a full restart)."""
 
 from __future__ import annotations
 
+from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -14,9 +15,29 @@ from homeassistant.setup import async_setup_component
 from custom_components.homeroster import (
     DOMAIN,
     FRONTEND_RETRY_DELAYS,
+    LOADER_BASE_DELAY_MS,
+    LOADER_MAX_ATTEMPTS,
     _async_register_frontend,
     _async_register_frontend_with_retry,
+    _build_loader_js,
 )
+
+
+class TestBuildLoaderJs:
+    def test_embeds_the_card_url_as_a_valid_js_string_literal(self):
+        js = _build_loader_js("/homeroster_static/homeroster-card-abc123.js")
+        assert '"/homeroster_static/homeroster-card-abc123.js"' in js
+
+    def test_embeds_the_configured_retry_parameters(self):
+        js = _build_loader_js("/homeroster_static/homeroster-card-abc123.js")
+        assert f"var MAX_ATTEMPTS = {LOADER_MAX_ATTEMPTS};" in js
+        assert f"var BASE_DELAY_MS = {LOADER_BASE_DELAY_MS};" in js
+
+    def test_safely_escapes_a_url_containing_special_characters(self):
+        # Not a real value we'd ever generate ourselves, but proves the
+        # embedding can't be broken out of by a hostile/unexpected string.
+        js = _build_loader_js('/x/"; alert(1); //.js')
+        assert 'var CARD_URL = "/x/\\"; alert(1); //.js"' in js
 
 
 async def test_missing_card_file_raises_instead_of_silently_skipping(hass, tmp_path):
@@ -61,8 +82,23 @@ async def test_successful_registration_uses_explicit_long_lived_caching(hass, tm
 
     assert hass.data[f"{DOMAIN}_frontend_registered"] is True
     (configs,), _kwargs = register_mock.call_args
-    assert configs[0].cache_headers is True
+    # Both the card and its loader are registered, both with long-lived
+    # caching - see _build_loader_js()'s docstring for why there are two.
+    assert len(configs) == 2
+    assert all(c.cache_headers is True for c in configs)
+    card_config, loader_config = configs
+    assert card_config.url_path.startswith("/homeroster_static/homeroster-card-")
+    assert loader_config.url_path.startswith("/homeroster_static/homeroster-loader-")
+
+    # add_extra_js_url must point at the loader, not the card directly -
+    # otherwise there's no retry and this whole mechanism does nothing.
     add_js_mock.assert_called_once()
+    (_hass_arg, registered_url), _kwargs2 = add_js_mock.call_args
+    assert registered_url == loader_config.url_path
+
+    # The loader file actually written to disk embeds the real card URL.
+    loader_content = Path(loader_config.path).read_text(encoding="utf-8")  # noqa: ASYNC240
+    assert card_config.url_path in loader_content
 
 
 async def test_transient_failure_schedules_a_retry(hass):

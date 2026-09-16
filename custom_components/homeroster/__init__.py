@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import logging
 from pathlib import Path
 from typing import Any
@@ -61,7 +62,26 @@ _LOGGER = logging.getLogger(__name__)
 
 WWW_PATH = Path(__file__).parent / "www"
 CARD_JS_FILENAME = "homeroster-card.js"
+LOADER_JS_FILENAME = "homeroster-loader.js"
+# Where the generated loader file is written - deliberately hass.config.path
+# (alongside homeroster_backups/, outside the git/HACS-managed
+# custom_components/ tree), not WWW_PATH: WWW_PATH only ever holds files
+# this repo actually ships, and a HACS update overwrites that whole
+# directory from the release, so anything we generate at runtime doesn't
+# belong there.
+GENERATED_DIR_NAME = "homeroster_generated"
 CARD_URL_BASE = "/homeroster_static"
+# Client-side retry for the loader script (see _build_loader_js) - separate
+# from FRONTEND_RETRY_DELAYS below, which only covers registering the URL
+# server-side at Home Assistant startup. This covers a *browser* failing to
+# fetch an already-correctly-registered URL (e.g. one dropped request over
+# an unreliable reverse proxy/tunnel) - something the retry below can't see
+# at all, since it never leaves the server. Home Assistant's own
+# add_extra_js_url loading has no retry of its own (a failed import() is
+# just caught and logged), so without this, a single bad fetch leaves the
+# card missing until the user manually reloads.
+LOADER_MAX_ATTEMPTS = 5
+LOADER_BASE_DELAY_MS = 500
 # Retry delays (seconds) for _async_register_frontend() if it fails for a
 # transient reason (e.g. the www/ file briefly missing/unreadable during an
 # update, or hass.http not fully warmed up yet on a cold start). Without
@@ -339,6 +359,47 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
     hass.data[f"{DOMAIN}_services_registered"] = True
 
 
+def _build_loader_js(card_url: str) -> str:
+    """A tiny, hand-written (not esbuild-bundled) loader that fetches the
+    real card bundle with its own retry-with-backoff, instead of relying on
+    Home Assistant's own add_extra_js_url loading (a single import() with
+    no retry - see LOADER_MAX_ATTEMPTS's comment above). json.dumps() is
+    used purely to safely embed card_url as a JS string literal (it's
+    always our own computed /homeroster_static/... path, never external
+    input, but this avoids ever having to reason about escaping by hand).
+    """
+    return (
+        '"use strict";\n'
+        "(function () {\n"
+        f"  var CARD_URL = {json.dumps(card_url)};\n"
+        f"  var MAX_ATTEMPTS = {LOADER_MAX_ATTEMPTS};\n"
+        f"  var BASE_DELAY_MS = {LOADER_BASE_DELAY_MS};\n"
+        "  function attempt(n) {\n"
+        "    import(CARD_URL).catch(function (err) {\n"
+        "      if (n >= MAX_ATTEMPTS) {\n"
+        "        console.error(\n"
+        '          "HomeRoster: Karte konnte nach " + MAX_ATTEMPTS +\n'
+        '            " Versuchen nicht geladen werden.",\n'
+        "          err\n"
+        "        );\n"
+        "        return;\n"
+        "      }\n"
+        "      setTimeout(function () {\n"
+        "        attempt(n + 1);\n"
+        "      }, BASE_DELAY_MS * Math.pow(2, n - 1));\n"
+        "    });\n"
+        "  }\n"
+        "  attempt(1);\n"
+        "})();\n"
+    )
+
+
+def _write_text_file(path: Path, content: str) -> None:
+    """Blocking - always called via hass.async_add_executor_job."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content, encoding="utf-8")
+
+
 async def _async_register_frontend(hass: HomeAssistant) -> None:
     # "http" is declared in manifest.json's `dependencies`, so hass.http is
     # guaranteed to exist by the time this runs. "frontend" (needed for
@@ -392,14 +453,34 @@ async def _async_register_frontend(hass: HomeAssistant) -> None:
     # but that reasoning was backwards: omitting the header doesn't disable
     # caching, it just makes it unpredictable.
     content_hash = hashlib.sha256(card_file.read_bytes()).hexdigest()[:10]
-    url_path = f"{CARD_URL_BASE}/homeroster-card-{content_hash}.js"
+    card_url = f"{CARD_URL_BASE}/homeroster-card-{content_hash}.js"
+
+    # add_extra_js_url points at this small loader instead of card_url
+    # directly, so a single dropped fetch (e.g. over a flaky reverse proxy/
+    # tunnel) can retry itself instead of leaving the card missing until a
+    # manual reload - see _build_loader_js()'s docstring. The loader's own
+    # URL is hashed from its content the same way, so it's just as safe to
+    # cache long-term, and a change to either the card or the loader itself
+    # naturally produces a new loader URL.
+    loader_js = _build_loader_js(card_url)
+    loader_file = Path(hass.config.path(GENERATED_DIR_NAME)) / LOADER_JS_FILENAME
+    await hass.async_add_executor_job(_write_text_file, loader_file, loader_js)
+    loader_hash = hashlib.sha256(loader_js.encode("utf-8")).hexdigest()[:10]
+    loader_url = f"{CARD_URL_BASE}/homeroster-loader-{loader_hash}.js"
 
     await hass.http.async_register_static_paths(
-        [StaticPathConfig(url_path, str(card_file), cache_headers=True)]
+        [
+            StaticPathConfig(card_url, str(card_file), cache_headers=True),
+            StaticPathConfig(loader_url, str(loader_file), cache_headers=True),
+        ]
     )
-    add_extra_js_url(hass, url_path)
+    add_extra_js_url(hass, loader_url)
     hass.data[f"{DOMAIN}_frontend_registered"] = True
-    _LOGGER.info("HomeRoster: Lovelace-Karte erfolgreich unter %s registriert.", url_path)
+    _LOGGER.info(
+        "HomeRoster: Lovelace-Karte erfolgreich registriert (Loader: %s, Karte: %s).",
+        loader_url,
+        card_url,
+    )
 
 
 async def _async_register_frontend_with_retry(hass: HomeAssistant, attempt: int = 0) -> None:
