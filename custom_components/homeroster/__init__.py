@@ -367,6 +367,16 @@ def _build_loader_js(card_url: str) -> str:
     used purely to safely embed card_url as a JS string literal (it's
     always our own computed /homeroster_static/... path, never external
     input, but this avoids ever having to reason about escaping by hand).
+
+    Each retry appends a `?retry=N` query string rather than re-requesting
+    the exact same URL: some browser/WebView engines memoize a *failed*
+    dynamic import() by its resolved URL and resolve later import() calls
+    for that same URL from that cached failure instead of re-fetching, which
+    would make every "retry" here instant and pointless instead of a real
+    new network attempt. A distinct URL per attempt makes that memoization
+    irrelevant - the static file is served regardless of query string, so
+    this doesn't affect which file is actually returned, only cache/module
+    identity.
     """
     return (
         '"use strict";\n'
@@ -375,7 +385,8 @@ def _build_loader_js(card_url: str) -> str:
         f"  var MAX_ATTEMPTS = {LOADER_MAX_ATTEMPTS};\n"
         f"  var BASE_DELAY_MS = {LOADER_BASE_DELAY_MS};\n"
         "  function attempt(n) {\n"
-        "    import(CARD_URL).catch(function (err) {\n"
+        '    var url = n === 1 ? CARD_URL : CARD_URL + "?retry=" + n;\n'
+        "    import(url).catch(function (err) {\n"
         "      if (n >= MAX_ATTEMPTS) {\n"
         "        console.error(\n"
         '          "HomeRoster: Karte konnte nach " + MAX_ATTEMPTS +\n'

@@ -33,6 +33,16 @@ class TestBuildLoaderJs:
         assert f"var MAX_ATTEMPTS = {LOADER_MAX_ATTEMPTS};" in js
         assert f"var BASE_DELAY_MS = {LOADER_BASE_DELAY_MS};" in js
 
+    def test_retries_use_a_distinct_url_per_attempt(self):
+        # A browser/WebView that memoizes a *failed* dynamic import() by URL
+        # would make retries against the exact same URL pointless (they'd
+        # resolve from the cached failure instead of re-fetching) - each
+        # attempt after the first must therefore request a different URL.
+        js = _build_loader_js("/homeroster_static/homeroster-card-abc123.js")
+        assert 'var url = n === 1 ? CARD_URL : CARD_URL + "?retry=" + n;' in js
+        assert "import(url)" in js
+        assert "import(CARD_URL)" not in js
+
     def test_safely_escapes_a_url_containing_special_characters(self):
         # Not a real value we'd ever generate ourselves, but proves the
         # embedding can't be broken out of by a hostile/unexpected string.
